@@ -6,19 +6,12 @@
 #include <intuition/intuition.h>
 #include <libraries/gadtools.h>
 
-#ifdef __GNUC__
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/gadtools.h>
 #include <proto/layers.h>
-#else
-#include <pragma/exec_lib.h>
-#include <pragma/graphics_lib.h>
-#include <pragma/intuition_lib.h>
-#include <pragma/gadtools_lib.h>
-#include <pragma/layers_lib.h>
-#endif
+#include <proto/dos.h>
 
 #include <AQWindow.h>
 #include <AQObject.h>
@@ -33,7 +26,7 @@ struct GfxBase *GfxBase;
 struct IntuitionBase *IntuitionBase;
 struct Library *GadToolsBase = nullptr;
 struct Library *LayersBase = nullptr;
-extern struct Library *DOSBase;
+//extern struct Library *DOSBase;
 struct Library *IconBase = nullptr;
 
 const AQPoint operator+(const AQPoint &p1, const AQPoint &p2)
@@ -152,14 +145,17 @@ AQApplication::AQApplication()
    IntuitionBase = (struct IntuitionBase *) OpenLibrary((UBYTE*)"intuition.library", 39L);
    LayersBase = OpenLibrary((UBYTE*)"layers.library", 39L);
    GadToolsBase = OpenLibrary((UBYTE*)"gadtools.library", 39L);
-   DOSBase = OpenLibrary((UBYTE*)"dos.library", 39L);
+   DOSBase = (struct DosLibrary *)OpenLibrary((UBYTE*)"dos.library", 39L);
    IconBase = OpenLibrary((UBYTE*)"icon.library", 39L);
 
    if (LayersBase == nullptr)
       exit(20);
-	s_aqApp = this;
+
+   s_aqApp = this;
 
    m_userPort = CreateMsgPort();
+
+   m_asyncFilePort = CreateMsgPort();
 }
 
 void AQApplication::setFocus(AQWidget *w)
@@ -178,6 +174,27 @@ bool AQApplication::isWindowBlocked(AQWindow *window) const
    return m_modalWindows.size() > 0 && (m_modalWindows.front() != window);
 }
 
+void AQApplication::startAsyncRead(BPTR file, char *buffer, int size)
+{
+   struct FileHandle *fh = (struct FileHandle *)BADDR(file);
+   struct DosPacket *packet;
+
+   if (fh && fh->fh_Type)
+   {
+      if (packet = (struct DosPacket *)AllocDosObject (DOS_STDPKT,TAG_END))
+      {
+         packet->dp_Port = m_asyncFilePort;
+
+         packet->dp_Type = ACTION_READ;
+         packet->dp_Arg1 = fh->fh_Arg1;
+         packet->dp_Arg2 = (LONG)buffer;
+         packet->dp_Arg3 = (LONG)size;
+
+         PutMsg (fh->fh_Type,packet->dp_Link);
+      }
+   }
+}
+
 void AQApplication::exec()
 {
    bool stayAlive = true;
@@ -187,9 +204,13 @@ void AQApplication::exec()
 void AQApplication::processEvents(bool &stayAlive)
 {
    IntuiMessage *imsg;
+   struct Message *asyncMsg;
+
+   ULONG sigFlag = (1L << m_userPort->mp_SigBit)
+             | (1L << m_asyncFilePort->mp_SigBit);
 
    while (stayAlive & !m_closing) {
-      Wait (1 << m_userPort->mp_SigBit);
+      ULONG sigs = Wait (sigFlag);
       /* NOTE:  If you use GadTools gadgets, you must use GT_GetIMsg()
        * and GT_ReplyIMsg() instead of GetMsg() and ReplyMsg().
        * Regular GetMsg() and ReplyMsg() are safe if the only part
@@ -224,6 +245,18 @@ void AQApplication::processEvents(bool &stayAlive)
             }
          }
       }
+      while (stayAlive && (!m_closing) && (asyncMsg = GetMsg(m_asyncFilePort))) {
+         struct DosPacket *packet;
+         long rc;
+
+         packet = (struct DosPacket *) asyncMsg->mn_Node.ln_Name;
+         rc = packet->dp_Res1;
+         char *buf = (char *)packet->dp_Arg2;
+         buf [rc] = 0;
+         FreeDosObject (DOS_STDPKT, packet);
+         emit("readFinished");
+      }
+      
    }
 }
 
@@ -295,6 +328,7 @@ AQApplication::~AQApplication()
    delete m_clipboard;
 
    DeleteMsgPort(m_userPort);
+   DeleteMsgPort(m_asyncFilePort);
 
    if (IconBase) {
       CloseLibrary(IconBase);
@@ -317,7 +351,7 @@ AQApplication::~AQApplication()
    }
 
    if (DOSBase) {
-      CloseLibrary(DOSBase);
+      CloseLibrary((struct Library *)DOSBase);
    }
 }
 

@@ -384,8 +384,8 @@ AQPoint AQWidget::mapFromGlobal(const AQPoint &p) const
 bool AQWidget::event(IntuiMessage &msg)
 {
    switch (msg.Class) {
-   case IDCMP_VANILLAKEY:
-   case IDCMP_RAWKEY: {
+   case IDCMP_RAWKEY:
+   case IDCMP_VANILLAKEY: {
       for (int i= 0; i < m_actions.size(); ++i)
          if (m_actions[i]->matchShortcut(msg)) {
             return true;
@@ -454,6 +454,11 @@ void AQWidget::focusInEvent()
 
 void AQWidget::focusOutEvent()
 {
+}
+
+bool AQWidget::wheelEvent(bool up)
+{
+   return false;
 }
 
 bool AQWidget::mouseDoubleClickEvent(const IntuiMessage &msg)

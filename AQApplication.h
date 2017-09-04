@@ -3,6 +3,8 @@
 
 #include <vector.h>
 
+#include <AQObject.h>
+
 #include "AQKernel.h"
     
 #define aqApp AQApplication::s_aqApp
@@ -14,10 +16,16 @@ class AQString;
 class AQClipboard;
 class AQAction;
 
-class AQApplication {
+typedef long BPTR;
+
+
+class AQApplication : public AQObject
+{
 public:
    AQApplication();
    ~AQApplication();
+
+   void startAsyncRead(BPTR file, char *buffer, int size);
    
    void exec();
    void processEvents(bool &stayAlive);
@@ -53,6 +61,7 @@ private:
    AQWidget *m_focusWidget;
    AQWidget *m_hoveredWidget;
    MsgPort *m_userPort;
+   MsgPort *m_asyncFilePort;
    int m_loopDepth;
    AQClipboard *m_clipboard;
 };

@@ -87,17 +87,31 @@ void AQSplitter::paintEvent(RastPort *rp, const AQRect &rect)
    LONG right = s.x - 1;
 
    SetAPen(rp, 1);
-   int y = bottom / 2;
-   WritePixel(rp, m_first->size().x+2, y-4);
-   WritePixel(rp, m_first->size().x+2, y);
-   WritePixel(rp, m_first->size().x+2, y+4);
+   if (m_horiz) {
+      int y = bottom / 2;
+      WritePixel(rp, m_first->size().x+2, y-4);
+      WritePixel(rp, m_first->size().x+2, y);
+      WritePixel(rp, m_first->size().x+2, y+4);
+   } else {
+      int x = right / 2;
+      WritePixel(rp, x - 4, m_first->size().y+1);
+      WritePixel(rp, x,     m_first->size().y+1);
+      WritePixel(rp, x + 4, m_first->size().y+1);
+   }
 }
 
 bool AQSplitter::mousePressEvent(const IntuiMessage &msg)
 {
-   if (msg.MouseX >= m_first->size().x && msg.MouseX < m_second->pos().x) {
-      m_pressed = true;
-      return true;
+   if (m_horiz) {
+      if (msg.MouseX >= m_first->size().x && msg.MouseX < m_second->pos().x) {
+         m_pressed = true;
+         return true;
+      }
+   } else {
+      if (msg.MouseY >= m_first->size().y && msg.MouseY < m_second->pos().y) {
+         m_pressed = true;
+         return true;
+      }
    }
    return false;
 }
@@ -105,7 +119,7 @@ bool AQSplitter::mousePressEvent(const IntuiMessage &msg)
 bool AQSplitter::mouseMoveEvent(const IntuiMessage &msg)
 {
    if (m_pressed) {
-      m_limitingItem->setSplitValue(msg.MouseX);
+      m_limitingItem->setSplitValue(m_horiz ? msg.MouseX : msg.MouseY);
    }
    return true;
 }

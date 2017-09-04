@@ -11,6 +11,8 @@ class Project;
 class AQLabel;
 class DocInfo;
 
+typedef long BPTR;
+
 class DevStudio : public AQMainWindow
 {
 public:
@@ -27,6 +29,7 @@ public:
    void onFileItemDoubleClicked(AQObject *obj);
    void onDocModificationChanged(AQObject *obj);
    void onCursorPositionChanged(AQObject *obj);
+   void onReadFinished();
 
 private:
    AQTextEdit *m_textEdit;
@@ -35,6 +38,8 @@ private:
    Project *m_project;
    map<AQString, DocInfo *> m_loadedDocs;
    DocInfo *m_currentDoc;
+   BPTR m_pipeFh;
+   char *m_pipeBuffer;
 };
    
 #endif

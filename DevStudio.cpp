@@ -9,6 +9,8 @@
 #include <AQStatusBar.h>
 #include <AQLabel.h>
 
+#include <proto/dos.h>
+
 #include "Project.h"
 #include "DevStudio.h"
 
@@ -93,6 +95,16 @@ DevStudio::DevStudio()
    m_positionLabel->setText("Ln:    Col:    ");
    statusBar()->addPermanentWidget(m_positionLabel);
    openProject("Work:devel/AQ");
+
+   Connect<DevStudio>(aqApp, "readFinished", this, &DevStudio::onReadFinished);
+}
+
+void DevStudio::onReadFinished()
+{
+   m_currentDoc->cursor->insertText(m_pipeBuffer);
+   m_currentDoc->cursor->insertText("ReadFinished");
+   m_textEdit->update();
+   Close(m_pipeFh);
 }
 
 DevStudio::~DevStudio()
@@ -179,7 +191,14 @@ void DevStudio::saveAll()
 
 void DevStudio::run()
 {
-   m_project->run();
+   //m_project->run();
+   m_currentDoc->cursor->insertText("StartRead");
+   m_textEdit->update();
+   m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
+   if (m_pipeFh != -1) {
+      m_pipeBuffer = new char[200];
+      aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 199);
+   }
 }
 
 void DevStudio::buildProject()

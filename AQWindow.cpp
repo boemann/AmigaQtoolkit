@@ -56,25 +56,25 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    AQPoint prefSize = widget->preferredSize() + m_border + m_border;
 
    m_window = OpenWindowTags(NULL,
-	WA_Width, prefSize.x,
-	WA_Height, prefSize.y,
-    WA_Left, widget->pos().x,
-	WA_Top, widget->pos().y,
-	WA_Activate, TRUE,
-	WA_Flags, WFLG_BORDERLESS,
-	WA_SimpleRefresh, TRUE,
-	WA_MinWidth, 5,
-	WA_MinHeight, 5,
-    WA_ReportMouse, TRUE,
-	WA_NewLookMenus, TRUE,
-	TAG_DONE, 0L);
+   WA_Width, prefSize.x,
+   WA_Height, prefSize.y,
+   WA_Left, widget->pos().x,
+   WA_Top, widget->pos().y,
+   WA_Activate, TRUE,
+   WA_Flags, WFLG_BORDERLESS,
+   WA_SimpleRefresh, TRUE,
+   WA_MinWidth, 5,
+   WA_MinHeight, 5,
+   WA_ReportMouse, TRUE,
+   WA_NewLookMenus, TRUE,
+   TAG_DONE, 0L);
 
    m_window->UserPort = aqApp->userPort();
 
    ModifyIDCMP(m_window, CLOSEWINDOW | MENUPICK | IDCMP_VANILLAKEY | IDCMP_RAWKEY
     | IDCMP_REFRESHWINDOW | IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE
     | IDCMP_ACTIVEWINDOW | IDCMP_INACTIVEWINDOW
-	       | IDCMP_INTUITICKS | IDCMP_CHANGEWINDOW);
+       | IDCMP_INTUITICKS | IDCMP_CHANGEWINDOW);
 
 
 //   m_widget->m_palette = new AQPalette();
@@ -102,7 +102,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 AQWindow::~AQWindow()
 {
    hide();
-	
+
    if (m_visualInfo) {
       FreeVisualInfo(m_visualInfo);
    }
@@ -220,8 +220,21 @@ void AQWindow::event(IntuiMessage &msg)
       // we handle it (and more) above
       break;
 
-   case IDCMP_VANILLAKEY:
    case IDCMP_RAWKEY:
+      if (msg.Code == AQWidget::Key_WheelUp || msg.Code == AQWidget::Key_WheelDown) {
+         AQWidget *receiver = pickMouseReceiver(msg);
+
+         if (receiver) {
+            if (!receiver->wheelEvent(msg.Code == AQWidget::Key_WheelUp)) {
+               receiver = aqApp->focusWidget();
+               if (receiver)
+                  receiver->wheelEvent(msg.Code == AQWidget::Key_WheelUp);
+            }
+         }
+         break;
+      }
+      // intentional fallthrough
+   case IDCMP_VANILLAKEY:
      if (!aqApp->isWindowBlocked(this)) {
          AQWidget *receiver = aqApp->focusWidget();
          while (receiver && !receiver->event(msg))
@@ -300,21 +313,21 @@ void AQWindow::event(IntuiMessage &msg)
    }
             
    case IDCMP_ACTIVEWINDOW:
-   	  m_active = true;
+      m_active = true;
       m_widget->changeEvent(AQWidget::Activation);
-   	  paintAll();
-   	  break;
+      paintAll();
+      break;
    case IDCMP_INACTIVEWINDOW:
       m_active = false;
       m_widget->changeEvent(AQWidget::InActivation);
-   	  paintAll();
-   	  break;
-   	
+      paintAll();
+      break;
+    
    case CLOSEWINDOW:
       if (aqApp->isWindowBlocked(this))
          return;
 
-   	  m_widget->closeEvent();
+      m_widget->closeEvent();
       break;
    }
 }
@@ -340,11 +353,12 @@ void AQWindow::paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg)
 
    if (winBg >= 0) { // we need to check if we should handle inherited bg
       int effectiveBg = winBg;
-      if (w->bgPen() == -2) {
+      if (w->bgPen() < 0) {//== -2) {
          // the widget doesn't need to draw so let's see if a child can
          // handle all of the clip so we can defer
          for (int i = 0; i < w->children().size(); ++i) {
             AQWidget *child = w->children()[i];
+
             if (child->geometry().contains(clip)) {
                effectiveBg = -1;  // yes child can handle all of the clip, so defer
                break;
@@ -405,8 +419,10 @@ void AQWindow::paintDirty()
 
 void AQWindow::markDirty(const AQRect &rect)
 {
-   Rectangle rectangle = {rect.topLeft.x, rect.topLeft.y,
-                  m_clientPos.x + rect.bottomRight.x, m_clientPos.y + rect.bottomRight.y};
+   Rectangle rectangle = {m_clientPos.x + rect.topLeft.x,
+                          m_clientPos.x + rect.topLeft.y,
+                          m_clientPos.x + rect.bottomRight.x,
+                          m_clientPos.y + rect.bottomRight.y};
 
    OrRectRegion(m_dirtyRegion, &rectangle);
 }

@@ -49,8 +49,11 @@ AQTextEdit::AQTextEdit(AQWidget *parent, bool withScroll)
    Connect<AQTextEdit>(m_pasteAction, "triggered", this, &AQTextEdit::paste);
    addAction(m_pasteAction);
 
-   if (m_scrollBar)
+   if (m_scrollBar) {
       Connect<AQTextEdit>(m_scrollBar, "valueChanged", this, &AQTextEdit::scrollUpdate);
+      m_scrollBar->setSingleStep(7);
+      m_scrollBar->setWheelStep(3*7);
+   }
 }
 
 AQTextEdit::~AQTextEdit()
@@ -163,6 +166,14 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
 
    ScrollLayer(0, rp->Layer, 2, 2); // restore offset
    restoreClipping(rp);
+}
+
+bool AQTextEdit::wheelEvent(bool up)
+{
+   if (m_scrollBar)
+      m_scrollBar->wheelEvent(up);
+
+   return false;
 }
 
 bool AQTextEdit::keyEvent(const IntuiMessage &msg)
@@ -295,7 +306,7 @@ bool AQTextEdit::mouseReleaseEvent(const IntuiMessage &msg)
 void AQTextEdit::resizeEvent(const AQPoint &oldSize)
 {
    if (m_scrollBar) {
-      m_scrollBar->setPageStep(size().y -2);
+      m_scrollBar->setPageStep(size().y - 4);
       m_scrollBar->setSize(AQPoint(m_scrollBar->preferredSize().x, size().y));
       m_scrollBar->setPos(AQPoint(size().x - m_scrollBar->size().x, 0));
    }
