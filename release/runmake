@@ -1,0 +1,5 @@
+.key projfolder configuration
+cd work:apps/ade
+execute ADE-startup
+cd <projfolder>
+ls <configuration> >pipe:adsbuild

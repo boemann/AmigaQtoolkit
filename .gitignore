@@ -1,0 +1,3 @@
+debug/*
+release/*.o
+release/AmigaDevStudio
