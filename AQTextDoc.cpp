@@ -2,6 +2,7 @@
 
 #include <AQTextDoc.h>
 #include <string.h>
+#include <ctype.h>
 
 #include <graphics/gfxbase.h>
 #include <graphics/rastport.h>
@@ -27,6 +28,9 @@ AQTextCursor::~AQTextCursor()
 
 void AQTextCursor::insertText(const AQString &str)
 {
+   if (hasSelection())
+      deleteSelection();
+
    int addLen = str.size();
 
    m_doc.pushData(m_pos, addLen);
@@ -44,6 +48,9 @@ void AQTextCursor::insertText(const AQString &str)
 
 void AQTextCursor::insertBlock()
 {
+   if (hasSelection())
+      deleteSelection();
+
    m_doc.pushData(m_pos, 1);
    m_doc.m_data[m_pos] = '\n';
    ++m_pos;
@@ -96,29 +103,17 @@ void AQTextCursor::setPosition(int pos, bool keepAnchor)
    }
 }
 
-bool charIsWhiteSpace(char c)
-{
-   if (c == ' ')
-      return true;
-   if (c == '\n')
-      return true;
-   if (c == '\t')
-      return true;
-
-   return false;
-}
-
 void AQTextCursor::select(AQTextCursor::SelectionType type)
 {
    switch(type) {
    default:
       m_anchorPos=m_pos;
       m_anchorInBlock = m_posInBlock;
-      while (m_anchorPos && ! charIsWhiteSpace(m_doc.m_data[m_anchorPos-1])) {
+      while (m_anchorPos && isalnum(m_doc.m_data[m_anchorPos-1])) {
          --m_anchorPos;
          --m_anchorInBlock;
       }
-      while (m_doc.m_data[m_pos] && ! charIsWhiteSpace(m_doc.m_data[m_pos])) {
+      while (m_doc.m_data[m_pos] && isalnum(m_doc.m_data[m_pos])) {
          ++m_pos;
          ++m_posInBlock;
       }
