@@ -122,6 +122,8 @@ public:
       Key_Help,
       Key_Home = 0x70,
       Key_End = 0x71,
+      Key_WheelUp = 0x7A, // passed on to widget as  wheelEvent()
+      Key_WheelDown = 0x7B, // assed on to widget as wheelEvent()
    } Key;
 
    enum {
@@ -142,6 +144,7 @@ protected:
    virtual void leaveEvent();
    virtual void focusInEvent();
    virtual void focusOutEvent();
+   virtual bool wheelEvent(bool up);
    virtual bool mouseDoubleClickEvent(const IntuiMessage &msg);
    virtual bool mousePressEvent(const IntuiMessage &msg);
    virtual bool mouseMoveEvent(const IntuiMessage &msg);

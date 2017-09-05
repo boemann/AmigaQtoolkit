@@ -33,6 +33,7 @@ protected:
    virtual bool keyEvent(const IntuiMessage &msg);
    virtual void focusInEvent();
    virtual void focusOutEvent();
+   virtual bool wheelEvent(bool up);
    virtual bool mouseDoubleClickEvent(const IntuiMessage &msg);
    virtual bool mousePressEvent(const IntuiMessage &msg);
    virtual bool mouseMoveEvent(const IntuiMessage &msg);

@@ -14,6 +14,10 @@ public:
    void setValue(int v);
    void setMaximum(int m);
    void setPageStep(int step);
+   void setSingleStep(int step);
+   void setWheelStep(int step);
+
+   virtual bool wheelEvent(bool up);
 
 protected:
    virtual void paintEvent(RastPort *rp, const AQRect &rect);
@@ -29,6 +33,7 @@ private:
    int m_value;
    int m_pageStep;
    int m_singleStep;
+   int m_wheelStep;
    int m_minimum;
    int m_maximum;
    int m_pressOffset;

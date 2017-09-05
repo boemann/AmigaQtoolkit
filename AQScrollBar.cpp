@@ -15,6 +15,7 @@ AQScrollBar::AQScrollBar(bool horiz, AQWidget *parent)
    , m_value(0)
    , m_pageStep(10)
    , m_singleStep(1)
+   , m_wheelStep(3)
    , m_minimum(0)
    , m_maximum(90)
    , m_botH(7)
@@ -91,6 +92,16 @@ void AQScrollBar::setPageStep(int step)
    update();
 }
 
+void AQScrollBar::setSingleStep(int step)
+{
+   m_singleStep = step;
+}
+
+void AQScrollBar::setWheelStep(int step)
+{
+   m_wheelStep = step;
+}
+
 void AQScrollBar::calculateKnob()
 {
    if (m_maximum - m_minimum > 0)
@@ -154,6 +165,16 @@ void AQScrollBar::paintEvent(RastPort *rp, const AQRect &rect)
    }
 }
 
+bool AQScrollBar::wheelEvent(bool up)
+{
+   if (up)
+      setValue(m_value - m_wheelStep);
+   else
+      setValue(m_value + m_wheelStep);
+
+   return true;
+}
+
 bool AQScrollBar::mousePressEvent(const IntuiMessage &msg)
 {
    LONG pos = msg.MouseY;
@@ -190,8 +211,6 @@ bool AQScrollBar::mouseMoveEvent(const IntuiMessage &msg)
 
 bool AQScrollBar::mouseReleaseEvent(const IntuiMessage &msg)
 {
-   int oldValue = m_value;
-
    switch (m_pressOffset) {
    case -1:
       setValue(m_value - m_pageStep);
