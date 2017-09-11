@@ -41,6 +41,8 @@ protected:
    virtual void resizeEvent(const AQPoint &oldSize);
  
 private:
+   AQRect cursorRect(bool fullLineWidth = false) const;
+
    AQTextDoc *m_doc;
    AQTextCursor *m_cursor;
    bool m_ownsDoc;

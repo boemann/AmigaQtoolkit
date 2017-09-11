@@ -174,11 +174,41 @@ bool AQTextEdit::wheelEvent(bool up)
       m_scrollBar->wheelEvent(up);
 
    return false;
+
+AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
+{   
+   AQPoint docOffset(0,0);
+   if (m_scrollBar)
+      docOffset.y = (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
+
+   if (fullLineWidth || m_cursor->hasSelection()) {
+      LONG top = m_doc->blockNumber(m_cursor->selectionStart()) * m_doc->lineHeight();
+      LONG bottom = (m_doc->blockNumber(m_cursor->selectionEnd()) + 1) 
+                                           * m_doc->lineHeight();
+
+     
+      LONG right = size().x - 4;
+      if (m_scrollBar)
+         right -= m_scrollBar->size().x + 2;
+
+      return AQRect(2, top - docOffset.y + 2, right, bottom - top);
+   }
+
+   LONG x = m_cursor->positionInBlock() * 6 - 1;
+   LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
+   x -= docOffset.x;
+   y -= docOffset.y;
+   x += 2; // we have a frame around the actual doc
+   y += 2;
+
+   return AQRect(x, y, 2, m_doc->lineHeight() + 1);
 }
 
 bool AQTextEdit::keyEvent(const IntuiMessage &msg)
 {
-   if(msg.Class ==IDCMP_RAWKEY) {
+   AQRect cursorPreRect = cursorRect();
+
+   if (msg.Class ==IDCMP_RAWKEY) {
       switch (msg.Code) {
       case Key_Left:
          m_cursor->movePrevChar(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
@@ -202,33 +232,45 @@ bool AQTextEdit::keyEvent(const IntuiMessage &msg)
          break;
       case Key_PageUp:
       case Key_Numeric9:
-         m_cursor->movePageUp((size().y -4) / 7, msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         m_cursor->movePageUp((size().y -4) / m_doc->lineHeight(), msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
          break;
       case Key_PageDown:
       case Key_Numeric3:
-         m_cursor->movePageDown((size().y -4) / 7, msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         m_cursor->movePageDown((size().y -4) / m_doc->lineHeight(), msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
          break;
       default:
          return 0;
       }
    } else { // IDMCP_VANILLAKEY
-      if (msg.Code == '\r')
+      if (msg.Code == '\r') {
          m_cursor->insertBlock();
-      else if (msg.Code == 0x08) // backspace
+         update();
+      } else if (msg.Code == 0x08) { // backspace
+         if (m_cursor->positionInBlock() == 0)
+            update();
+         else
+            update(cursorRect(true));
          m_cursor->deleteLeft();
-      else if (msg.Code == 0x7F) // delete
+      } else if (msg.Code == 0x7F) { // delete
          m_cursor->deleteRight();
-      else if (msg.Code >31){
+         if (m_cursor->positionInBlock() == 0)
+            update();
+         else
+            update(cursorRect(true));
+      } else if (msg.Code >31){
          char cstr[2];
          cstr[0] = msg.Code;
          cstr[1] = 0;
          AQString str(cstr);
          m_cursor->insertText(str);
+         update(cursorRect(true));
       }
       if (m_scrollBar)
          m_scrollBar->setMaximum(m_doc->height());
    }
-   update();
+
+   update(cursorPreRect);
+   update(cursorRect());
    ensureCursorVisible();
    return true;
 }
