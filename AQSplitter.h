@@ -3,7 +3,7 @@
 
 #include <AQWidget.h>
 
-class LimitingItem;
+class SplitLayout;
 
 class AQSplitter : public AQWidget
 {
@@ -24,7 +24,7 @@ private:
    AQWidget *m_second;
    bool m_horiz;
    bool m_pressed;
-   LimitingItem *m_limitingItem;
+   SplitLayout *m_splitLayout;
 };
    
 #endif

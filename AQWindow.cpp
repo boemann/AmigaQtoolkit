@@ -337,34 +337,26 @@ void AQWindow::paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg)
    ScrollLayer(0, rp->Layer, -pos.x, -pos.y);
    clip.translate(-pos);    // make clip as seen by the widget
 
-   if (w->bgPen() >= 0) {
-      SetAPen(rp, w->bgPen());
+   winBg = w->bgPen() >= 0 ? w->bgPen() : winBg;
+
+   // Let's see if a child can handle all of the clip so we can defer
+   for (int i = 0; i < w->children().size(); ++i) {
+      AQWidget *child = w->children()[i];
+
+      if (child->geometry().contains(clip)) {
+         // child can handle all of the clip
+         paintWidget(child, rp, clip, winBg);
+         ScrollLayer(0, rp->Layer, pos.x, pos.y);  // undo the painting offset
+         return;
+      }
+   }
+
+   if (winBg >= 0) {
+      SetAPen(rp, winBg);
       RectFill(rp, clip.topLeft.x, clip.topLeft.y, clip.bottomRight.x, clip.bottomRight.y);
-      winBg = -1;
+      winBg = -1; // mark we have painted the background
    }
-
-   if (winBg >= 0) { // we need to check if we should handle inherited bg
-      int effectiveBg = winBg;
-      if (w->bgPen() < 0) {//== -2) {
-         // the widget doesn't need to draw so let's see if a child can
-         // handle all of the clip so we can defer
-         for (int i = 0; i < w->children().size(); ++i) {
-            AQWidget *child = w->children()[i];
-
-            if (child->geometry().contains(clip)) {
-               effectiveBg = -1;  // yes child can handle all of the clip, so defer
-               break;
-            }
-         }
-      }
-
-      if (effectiveBg >= 0) {
-         SetAPen(rp, effectiveBg);
-         RectFill(rp, clip.topLeft.x, clip.topLeft.y, clip.bottomRight.x, clip.bottomRight.y);
-         winBg = -1; // mark we have handled the window background
-      }
-   }
- 
+   
    w->paintEvent(rp, clip);
 
    // now paint children
@@ -570,8 +562,8 @@ void AQWindow::hoverTest(const IntuiMessage &msg, bool forceSet)
                                    msg.MouseY + m_window->TopEdge - m_y,
                                    m_window->Width, m_window->Height);
    } else {
-   	  WORD dw = 0;
-   	  WORD dh = 0;
+      WORD dw = 0;
+      WORD dh = 0;
       WORD dx = 0;
       WORD dy = 0;
       AQPoint calculatedAllowance(m_widget->size());

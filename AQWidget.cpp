@@ -134,14 +134,15 @@ void AQWidget::setSize(const AQPoint &s)
 {
    AQPoint oldSize(m_size);
 
-   if (m_layout)
-      m_layout->layout(s);
- 
-
-   if (m_size == s)
-      return;
+   bool diff = (m_size == s);
 
    m_size = s;
+
+   if (m_layout)
+      m_layout->layout(s);
+
+   if (diff)
+      return;
 
    resizeEvent(oldSize);
 }

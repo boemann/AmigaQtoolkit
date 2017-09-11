@@ -28,7 +28,8 @@ AQTextEdit::AQTextEdit(AQWidget *parent, bool withScroll)
 {
    setBgPen(2);
    setExpanding(true, true);
-   setMinimumSize(AQPoint(9, 10));
+   setMinimumSize(AQPoint(9, 10)
+       + (withScroll ? m_scrollBar->minimumSize() : AQPoint()));
    setPreferredSize(AQPoint(400, 100));
    setFocus();
    setContextMenuPolicy(2); // we want right mouse button event
@@ -81,7 +82,11 @@ AQScrollBar *AQTextEdit::verticalScrollBar() const
 
 void AQTextEdit::scrollUpdate(int v)
 {
-   update();
+   AQRect area(2, 2, size().x - 4, size().y - 4);
+   if (m_scrollBar)
+      area.bottomRight.x -= m_scrollBar->size().x + 2;
+
+   update(area);
 }
 
 void AQTextEdit::cut()
@@ -131,21 +136,22 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
    LONG right = s.x - 1;
 
    if (m_scrollBar)
-    right -= m_scrollBar->size().x + 2;
-
-   // norm backgorund for the scrollbar
-   SetAPen(rp, 0);
-   RectFill(rp, right + 1, 0, s.x, s.y);
+      right -= m_scrollBar->size().x + 2;
 
    AQRect clipRect(rect);
    clipRect.bottomRight.x = aqMin(right - 2, rect.bottomRight.x);
+
+   if (rect.bottomRight.x > right) {
+      SetAPen(rp, 0);
+      RectFill(rp, right, 0, right+2, bottom);
+   }
+
+   pushClipRect(rp, clipRect);
 
    SetAPen(rp, SHADOW);
    Move(rp, right, 0);
    Draw(rp, 0, 0);
    Draw(rp, 0, bottom);
-
-   pushClipRect(rp, clipRect);
 
    AQPoint docOffset(0,0);
    if (m_scrollBar)
@@ -161,7 +167,7 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
       LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
       x -= docOffset.x;
       y -= docOffset.y;
-      RectFill(rp, x, y, x + 1, y + rp->TxHeight);
+      RectFill(rp, x, y, x + 1, y + m_doc->lineHeight());
    }
 
    ScrollLayer(0, rp->Layer, 2, 2); // restore offset
@@ -173,7 +179,8 @@ bool AQTextEdit::wheelEvent(bool up)
    if (m_scrollBar)
       m_scrollBar->wheelEvent(up);
 
-   return false;
+   return true;
+}
 
 AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
 {   

@@ -1,54 +1,76 @@
 
 #include <graphics/gfxbase.h>
 
-#ifdef __GNUC__
 #include <proto/graphics.h>
-#else
-#include <pragma/graphics_lib.h>
-#endif
 
 #include <AQLayout.h>
 
 #include "AQSplitter.h"
 
-class LimitingItem : public AQLayoutItem
+class SplitLayout : public AQLayout
 {
 public:
-   LimitingItem(bool horiz, AQWidget *w)
-      : AQLayoutItem(nullptr)
+   SplitLayout(bool horiz, AQWidget *w, AQWidget *o)
+      : AQLayout(horiz)
       , m_widget(w)
+      , m_otherWidget(o)
       , m_horiz(horiz)
    {
       if (horiz)
          m_val = w->preferredSize().x;
       else
          m_val = w->preferredSize().y;
+      
+      addWidget(m_widget);
+      addItem(new AQSpacerItem(AQPoint(0,0), !m_horiz, m_horiz));
+      addWidget(m_otherWidget);
    }
-   ~LimitingItem() {}
+   ~SplitLayout() {}
 
-   AQPoint minimumSize() const {
-      if (m_horiz)
-         return AQPoint(aqMax(m_val, m_widget->minimumSize().x), m_widget->minimumSize().y);
-      else
-         return AQPoint(m_widget->minimumSize().x, aqMax(m_val, m_widget->minimumSize().y));
+   void layout(const AQPoint &size) {
+      int val = m_val;
+      const int space = 3;
+      if (m_horiz) {
+         if (val < m_widget->minimumSize().x)
+            val = m_widget->minimumSize().x;
+
+         if (val > size.x - space - m_otherWidget->minimumSize().x)
+            val = size.x - space - m_otherWidget->minimumSize().x;
+
+         m_widget->setPos(AQPoint());
+         m_widget->setSize(AQPoint(val, size.y));
+
+         m_otherWidget->setPos(AQPoint(val + space, 0));
+         m_otherWidget->setSize(AQPoint(size.x - val - space, size.y));
+      } else {
+         if (val < m_widget->minimumSize().y)
+            val = m_widget->minimumSize().y;
+
+         if (val > size.y - space - m_otherWidget->minimumSize().y)
+            val = size.y - space - m_otherWidget->minimumSize().y;
+
+         m_widget->setPos(AQPoint());
+         m_widget->setSize(AQPoint(size.x, val));
+
+         m_otherWidget->setPos(AQPoint(0, val + space));
+         m_otherWidget->setSize(AQPoint(size.x, size.y - val - space));
+      }
    }
 
-   AQPoint preferredSize() const  {
-      if (m_horiz)
-         return AQPoint(aqMax(m_val, m_widget->minimumSize().x), m_widget->preferredSize().y);
-      else
-         return AQPoint(m_widget->preferredSize().x, aqMax(m_val, m_widget->minimumSize().y));
+   void setSplitValue(int v) {
+      if (v < 2)
+         v = 2;
+      if (v == m_val)
+         return;
+      m_val=v;
+      m_widget->updateGeometry();
    }
-   void layout(const AQPoint &size) {m_widget->setSize(size);}
-   bool likeToExpandX() const {if (m_horiz) return false; else return m_widget->likeToExpandX();}
-   bool likeToExpandY() const {if (!m_horiz) return false; else return m_widget->likeToExpandY();}
-   void setPos(const AQPoint &pos) {m_widget->setPos(pos);}
-   void setSplitValue(int v) {m_val=v; m_widget->updateGeometry();}
 
 private:
-  AQWidget *m_widget;
-  bool m_horiz;
-  int m_val;
+   AQWidget *m_widget;
+   AQWidget *m_otherWidget;
+   bool m_horiz;
+   int m_val;
 };
 
 AQSplitter::AQSplitter(bool horizontal, AQWidget *parent)
@@ -57,7 +79,7 @@ AQSplitter::AQSplitter(bool horizontal, AQWidget *parent)
    , m_second(nullptr)
    , m_horiz(horizontal)
    , m_pressed(false)
-   , m_limitingItem(nullptr)
+   , m_splitLayout(nullptr)
 {
    setBgPen(-1); // no bg but we draw ourself
 }
@@ -72,12 +94,8 @@ void AQSplitter::setWidgets(AQWidget *first, AQWidget *second)
    m_second = second;
    first->setParent(this);
    second->setParent(this);
-   AQLayout *m_sLayout = new AQLayout(m_horiz);
-   m_limitingItem = new LimitingItem(m_horiz, first);
-   m_sLayout->addItem(m_limitingItem);
-   m_sLayout->addItem(new AQSpacerItem(AQPoint(0,0), !m_horiz, m_horiz));
-   m_sLayout->addWidget(second);
-   setLayout(m_sLayout);
+   m_splitLayout = new SplitLayout(m_horiz, first, second);
+   setLayout(m_splitLayout);
 }
 
 void AQSplitter::paintEvent(RastPort *rp, const AQRect &rect)
@@ -89,9 +107,9 @@ void AQSplitter::paintEvent(RastPort *rp, const AQRect &rect)
    SetAPen(rp, 1);
    if (m_horiz) {
       int y = bottom / 2;
-      WritePixel(rp, m_first->size().x+2, y-4);
-      WritePixel(rp, m_first->size().x+2, y);
-      WritePixel(rp, m_first->size().x+2, y+4);
+      WritePixel(rp, m_first->size().x+1, y-4);
+      WritePixel(rp, m_first->size().x+1, y);
+      WritePixel(rp, m_first->size().x+1, y+4);
    } else {
       int x = right / 2;
       WritePixel(rp, x - 4, m_first->size().y+1);
@@ -119,8 +137,12 @@ bool AQSplitter::mousePressEvent(const IntuiMessage &msg)
 bool AQSplitter::mouseMoveEvent(const IntuiMessage &msg)
 {
    if (m_pressed) {
-      m_limitingItem->setSplitValue(m_horiz ? msg.MouseX : msg.MouseY);
+      if (m_horiz)
+         m_splitLayout->setSplitValue(msg.MouseX);
+      else
+         m_splitLayout->setSplitValue(msg.MouseY);
    }
+
    return true;
 }
 
@@ -130,4 +152,7 @@ bool AQSplitter::mouseReleaseEvent(const IntuiMessage &msg)
    update();
    return true;
 }
+
+
+
 

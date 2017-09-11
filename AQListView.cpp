@@ -151,7 +151,7 @@ AQListView::AQListView(AQWidget *parent)
 {
    setBgPen(0); // no bg but we draw ourself
    setExpanding(true, true);
-   setMinimumSize(AQPoint(20 + m_scrollBar->minimumSize().x, 10));
+   setMinimumSize(AQPoint(20, 0) + m_scrollBar->minimumSize());
    setPreferredSize(AQPoint(150, 150));
    m_rootItem->setExpanded(true);
 

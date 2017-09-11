@@ -20,7 +20,7 @@ AQScrollBar::AQScrollBar(bool horiz, AQWidget *parent)
    , m_maximum(90)
    , m_botH(7)
 {
-   setBgPen(-1); // no bg but we draw ourself
+   setBgPen(0); // we like a grey background no matter where we are
 
    if (horiz) {
       setExpanding(true, false);
