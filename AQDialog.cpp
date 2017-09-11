@@ -7,15 +7,9 @@
 #include <dos/dos.h>
 #include <dos/exall.h>
 
-#ifdef __GNUC__
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/dos.h>
-#else
-#include <pragma/exec_lib.h>
-#include <pragma/graphics_lib.h>
-#include <pragma/dos_lib.h>
-#endif
 
 #include <AQLayout.h>
 #include <AQWindow.h>

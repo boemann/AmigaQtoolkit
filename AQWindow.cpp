@@ -9,19 +9,11 @@
 #include <graphics/gfxbase.h>
 #include <devices/inputevent.h>
 
-#ifdef __GNUC__
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/gadtools.h>
 #include <proto/layers.h>
-#else
-#include <pragma/exec_lib.h>
-#include <pragma/graphics_lib.h>
-#include <pragma/intuition_lib.h>
-#include <pragma/gadtools_lib.h>
-#include <pragma/layers_lib.h>
-#endif
 
 #include <AQApplication.h>
 #include <AQWidget.h>

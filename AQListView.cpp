@@ -442,6 +442,14 @@ void AQListView::focusOutEvent()
    update();
 }
 
+bool AQListView::wheelEvent(bool up)
+{
+   m_scrollBar->wheelEvent(up);
+
+   return true;
+}
+
+
 bool AQListView::mouseDoubleClickEvent(const IntuiMessage &msg)
 {
    AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
