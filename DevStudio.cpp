@@ -39,7 +39,6 @@ DevStudio::DevStudio()
    setExpanding(true, true);
    setMinimumSize(AQPoint(60, 40));
    setPos(AQPoint(0, 20));
-   setPreferredSize(AQPoint(640, 492));
 
    AQAction *openAction = new AQAction(this);
    openAction->setShortcut("Amiga+O");
@@ -80,12 +79,16 @@ DevStudio::DevStudio()
    setWindowTitle("Amiga Development Studio");
 
    m_textEdit = new AQTextEdit();
+   m_textEdit->setPreferredSize(AQPoint(640, 400));
    setCentralWidget(m_textEdit);
 
 
    m_projectView = new AQListView();
    setLeftSideBar(m_projectView);
    Connect<DevStudio>(m_projectView, "itemDoubleClicked", this, &DevStudio::onFileItemDoubleClicked);
+
+   m_outputView = new AQListView();
+   setBottomSideBar(m_outputView);
 
    m_textEdit->setFocus();
    m_currentDoc = new DocInfo();
@@ -97,14 +100,28 @@ DevStudio::DevStudio()
    openProject("Work:devel/AQ");
 
    Connect<DevStudio>(aqApp, "readFinished", this, &DevStudio::onReadFinished);
+
+   setPreferredSize(AQPoint(640, 496));
 }
 
 void DevStudio::onReadFinished()
 {
-   m_currentDoc->cursor->insertText(m_pipeBuffer);
-   m_currentDoc->cursor->insertText("ReadFinished");
-   m_textEdit->update();
+   int i = 0;
+   int start = 0;
+   while (m_pipeBuffer[i] != 0) {
+      while (m_pipeBuffer[i] != 0 && m_pipeBuffer[i] != '\n')
+         ++i;
+
+      if (m_pipeBuffer[i] == '\n') {
+         AQListItem *favorites= new AQListItem(m_outputView);
+         favorites->setText(0, AQString(m_pipeBuffer + start, i-start));
+         m_outputView->addTopLevelItem(favorites);
+         ++i;
+         start = i;
+      }
+   }
    Close(m_pipeFh);
+   m_outputView->update();
 }
 
 DevStudio::~DevStudio()
@@ -192,8 +209,7 @@ void DevStudio::saveAll()
 void DevStudio::run()
 {
    //m_project->run();
-   m_currentDoc->cursor->insertText("StartRead");
-   m_textEdit->update();
+   m_outputView->clear();
    m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
    if (m_pipeFh != -1) {
       m_pipeBuffer = new char[200];

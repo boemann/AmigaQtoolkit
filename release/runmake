@@ -2,4 +2,6 @@
 cd work:apps/ade
 execute ADE-startup
 cd <projfolder>
-ls <configuration> >pipe:adsbuild
+make >pipe:adsbuild <configuration>
+echo after >pipe:adsbuild
+echo after2 >pipe:adsbuild

@@ -34,6 +34,7 @@ public:
 private:
    AQTextEdit *m_textEdit;
    AQListView *m_projectView;
+   AQListView *m_outputView;
    AQLabel *m_positionLabel;
    Project *m_project;
    map<AQString, DocInfo *> m_loadedDocs;
