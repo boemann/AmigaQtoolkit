@@ -2,6 +2,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <proto/dos.h>
+
+
 AQString::AQString()
    : m_d(new Private())
 { 
@@ -177,4 +180,49 @@ const AQString operator+(const AQString &s1, const AQString &s2)
    AQString ret(s1);
    ret += s2;
    return ret;
+}
+
+AQString qCdUp(const AQString &path)
+{
+   char *data = path;
+   char *endPtr = strrchr(data, '/');
+   if (endPtr == nullptr) {
+      endPtr = strrchr(data, ':');
+
+      if (endPtr == nullptr)
+         return AQString();
+      ++endPtr;
+   }
+
+   return AQString(data, endPtr-data);
+}
+
+AQString qFileName(const AQString &path)
+{
+   char *data = path;
+   char *startPtr = strrchr(data, '/');
+
+   if (startPtr == nullptr)
+      startPtr = strrchr(data, ':');
+
+   if (startPtr == nullptr)
+      return data;
+
+   return startPtr+1;
+}
+
+bool qIsFolder(const AQString &name)
+{
+   bool result = false;
+   BPTR lock = Lock(name, SHARED_LOCK);
+   if (lock) {
+      FileInfoBlock *fib = (FileInfoBlock *)AllocDosObject(DOS_FIB, nullptr);
+      if (fib) {
+         Examine(lock, fib);
+         result = fib->fib_DirEntryType > 0;
+         FreeDosObject(DOS_FIB, fib);
+      }
+      UnLock(lock);
+   }
+   return result;
 }

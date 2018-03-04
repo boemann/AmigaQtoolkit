@@ -14,6 +14,8 @@
 #include "Project.h"
 #include "DevStudio.h"
 
+#include <stdio.h>
+
 struct DocInfo
 {
    DocInfo() {}
@@ -35,6 +37,7 @@ DocInfo::DocInfo(DevStudio *studio, class AQString &path)
 DevStudio::DevStudio()
    : AQMainWindow()
    , m_project(nullptr)
+   , m_incompleteAddedOutput(nullptr)
 {
    setExpanding(true, true);
    setMinimumSize(AQPoint(60, 40));
@@ -45,6 +48,12 @@ DevStudio::DevStudio()
    openAction->setText("Open...");
    Connect<DevStudio>(openAction, "triggered", this, &DevStudio::openFile);
    aqApp->addAction(openAction);
+
+   AQAction *openProjectAction = new AQAction(this);
+   openProjectAction->setShortcut("Shift+Amiga+O");
+   openProjectAction->setText("Open Project...");
+   Connect<DevStudio>(openProjectAction, "triggered", this, &DevStudio::openProject);
+   aqApp->addAction(openProjectAction);
 
    AQAction *saveAction = new AQAction(this);
    saveAction->setShortcut("Amiga+S");
@@ -59,7 +68,7 @@ DevStudio::DevStudio()
    aqApp->addAction(saveAsAction);
 
    AQAction *saveAllAction = new AQAction(this);
-   saveAllAction->setShortcut("Altt+Amiga+S");
+   saveAllAction->setShortcut("Alt+Amiga+S");
    saveAllAction->setText("Save All");
    Connect<DevStudio>(saveAllAction, "triggered", this, &DevStudio::saveAll);
    aqApp->addAction(saveAllAction);
@@ -88,6 +97,8 @@ DevStudio::DevStudio()
    Connect<DevStudio>(m_projectView, "itemDoubleClicked", this, &DevStudio::onFileItemDoubleClicked);
 
    m_outputView = new AQListView();
+   m_outputView->setTreeMode(false);
+   m_outputView->setWordWrap(true);
    setBottomSideBar(m_outputView);
 
    m_textEdit->setFocus();
@@ -100,6 +111,11 @@ DevStudio::DevStudio()
    openProject("Work:devel/AQ");
 
    Connect<DevStudio>(aqApp, "readFinished", this, &DevStudio::onReadFinished);
+   m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
+   if (m_pipeFh != -1) {
+      m_pipeBuffer = new char[600];
+      aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
+   }
 
    setPreferredSize(AQPoint(640, 496));
 }
@@ -112,21 +128,55 @@ void DevStudio::onReadFinished()
       while (m_pipeBuffer[i] != 0 && m_pipeBuffer[i] != '\n')
          ++i;
 
+      AQListItem *outputItem;
+      AQString text;
+      if (m_incompleteAddedOutput) {
+         outputItem = m_incompleteAddedOutput;
+         text = outputItem->text(0);
+      } else {
+         outputItem = new AQListItem(m_outputView);
+         text = AQString(m_pipeBuffer + start, i-start);
+         m_outputView->addTopLevelItem(outputItem);
+      }
+      outputItem->setText(0, text);
+
       if (m_pipeBuffer[i] == '\n') {
-         AQListItem *favorites= new AQListItem(m_outputView);
-         favorites->setText(0, AQString(m_pipeBuffer + start, i-start));
-         m_outputView->addTopLevelItem(favorites);
+         m_incompleteAddedOutput = nullptr;
          ++i;
          start = i;
+      } else {
+         m_incompleteAddedOutput = outputItem;
       }
+
+      if (text.endsWith("stopasyncpipe"))
+         return;
    }
+
    Close(m_pipeFh);
+   m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
+   aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
    m_outputView->update();
 }
 
 DevStudio::~DevStudio()
 {
    delete m_project;
+
+   Close(m_pipeFh);
+}
+
+void DevStudio::openProject()
+{
+   AQDialog *dialog = new AQDialog(AQDialog::OpenButton | AQDialog::CancelButton
+                  | AQDialog::SelectionName | AQDialog::DrawerMode);
+   dialog->setWindowTitle("Open Project");
+   if (m_project)
+      dialog->setDrawer(m_project->projectPath());
+
+   if (dialog->exec()) {
+      openProject(dialog->selectedPath());
+   }
+   delete dialog;
 }
 
 void DevStudio::openProject(const AQString &projectPath)
@@ -151,6 +201,17 @@ void DevStudio::openFile()
    AQDialog *dialog = new AQDialog(AQDialog::OpenButton | AQDialog::CancelButton
                   | AQDialog::SelectionName);
    dialog->setWindowTitle("Open File");
+   map<AQString, DocInfo *>::iterator it = m_loadedDocs.begin();
+   while (it != m_loadedDocs.end()) {
+      if (it->second->doc == m_textEdit->document()) {
+         dialog->setDrawer(qCdUp(it->first));
+         break;
+      }
+      it++;
+   }
+   if (it == m_loadedDocs.end())
+      dialog->setDrawer(m_project->projectPath());
+
    if (dialog->exec()) {
       m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
       AQString path(dialog->selectedPath());
@@ -208,18 +269,16 @@ void DevStudio::saveAll()
 
 void DevStudio::run()
 {
-   //m_project->run();
+   m_incompleteAddedOutput = nullptr;
    m_outputView->clear();
-   m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
-   if (m_pipeFh != -1) {
-      m_pipeBuffer = new char[200];
-      aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 199);
-   }
+   m_project->run();
 }
 
 void DevStudio::buildProject()
 {
    saveAll();
+   m_incompleteAddedOutput = nullptr;
+   m_outputView->clear();
    m_project->build();
 }
 

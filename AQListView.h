@@ -55,6 +55,9 @@ public:
    AQListView(AQWidget *parent = nullptr);
    ~AQListView();
    
+   void setTreeMode(bool on);
+   void setWordWrap(bool on);
+
    void addTopLevelItem(AQListItem *item);
 
    void scrollUpdate(int v);
@@ -83,12 +86,16 @@ protected:
 
 private:
    void paintChildren(RastPort *rp, int &x, int &, AQListItem *parent);
+   AQListItem *itemAtRecurse(const AQListItem *root, int h, int &x, int &y, int searchY);
 
    AQScrollBar *m_scrollBar;
    AQListItem *m_rootItem;
    AQIcon m_rightIcon;
    AQIcon m_downIcon;
    AQListItem *m_selectedItem;
+   bool m_treeMode;
+   bool m_wordWrap;
+   int m_expanderWidth;
 };
    
 #endif

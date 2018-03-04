@@ -50,5 +50,8 @@ private:
 
 const AQString operator+(const AQString &s1, const AQString &s2);
 
-   
+AQString qCdUp(const AQString &path);
+AQString qFileName(const AQString &path);
+bool qIsFolder(const AQString &path);
+
 #endif

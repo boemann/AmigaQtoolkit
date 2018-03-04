@@ -7,6 +7,7 @@
 
 class AQTextEdit;
 class AQListView;
+class AQListItem;
 class Project;
 class AQLabel;
 class DocInfo;
@@ -19,6 +20,7 @@ public:
    DevStudio();
    ~DevStudio();
 
+   void openProject();
    void openProject(const AQString &projectPath);
    void openFile();
    void saveFileAs();
@@ -35,6 +37,7 @@ private:
    AQTextEdit *m_textEdit;
    AQListView *m_projectView;
    AQListView *m_outputView;
+   AQListItem *m_incompleteAddedOutput;
    AQLabel *m_positionLabel;
    Project *m_project;
    map<AQString, DocInfo *> m_loadedDocs;

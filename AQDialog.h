@@ -25,11 +25,13 @@ public:
    int exec();
 
    AQString drawer() const;
+   void setDrawer(const AQString &drawerPath);
    AQString selectedPath() const;
 
    void accept();
    void dismiss();
 
+   void onCdUp();
    void onItemExpanded(AQObject *obj);
    void onItemActivated(AQObject *obj);
    void onFileItemActivated(AQObject *obj);
@@ -47,6 +49,7 @@ private:
    AQLineEdit *m_selectName;
    AQLineEdit *m_locationName;
    bool m_drawerMode;
+   bool m_drawerIsSet;
    bool m_visible;
    int m_return;
 };

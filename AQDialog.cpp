@@ -26,6 +26,7 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
    : AQWidget(parent)
    , m_selectName(nullptr)
    , m_drawerMode(features & DrawerMode)
+   , m_drawerIsSet(false)
 {
    setBgPen(-2); // no bg and only subwidgets
 
@@ -67,6 +68,7 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
    b = new AQButton(true, this);
    b->setIcon(AQIcon("levelup"));
    locationLayout->addWidget(b);
+   Connect<AQDialog>(b, "clicked", this, &AQDialog::onCdUp);
    m_locationName = new AQLineEdit(this);
    locationLayout->addWidget(m_locationName);
    m_drawerView = new AQListView();
@@ -75,6 +77,7 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
    Connect<AQDialog>(m_drawerView, "itemExpanded", this, &AQDialog::onItemExpanded);
 
    m_filesView = new AQListView();
+   m_filesView->setTreeMode(false);
    Connect<AQDialog>(m_filesView, "itemActivated", this, &AQDialog::onFileItemActivated);
    Connect<AQDialog>(m_filesView, "itemDoubleClicked", this, &AQDialog::onFileItemDoubleClicked);
 
@@ -137,9 +140,34 @@ void AQDialog::dismiss()
    m_visible = false;
 }
 
+void AQDialog::onCdUp()
+{
+   setDrawer(qCdUp(drawer()));
+}
+
 AQString AQDialog::drawer() const
 {
    return m_locationName->text();
+}
+
+void AQDialog::setDrawer(const AQString &drawerPath)
+{
+   if (!qIsFolder(drawerPath)) {
+      return;
+   }
+
+   m_filesView->clear();
+   m_filesView->rootItem()->setText(1, drawerPath);
+
+   populateDrawer(m_filesView->rootItem(), true);
+   m_locationName->document()->setData(drawerPath);
+   m_locationName->update();
+
+   if (m_drawerMode) {
+      m_selectName->document()->setData(qFileName(drawerPath));
+      m_selectName->update();
+   }
+   m_drawerIsSet = true;
 }
 
 AQString AQDialog::selectedPath() const
@@ -149,7 +177,10 @@ AQString AQDialog::selectedPath() const
    if (!m_selectName)
       return p;
 
-   if (p.endsWith(":"))
+   if (m_drawerIsSet)
+      p = qCdUp(p);
+
+   if (p.endsWith(":") || p.isEmpty())
       return p + m_selectName->text();
    else
       return p + "/" + m_selectName->text();
@@ -270,37 +301,17 @@ void AQDialog::onItemActivated(AQObject *obj)
 {
    AQListItem *item = (AQListItem *)(obj);
 
-   m_filesView->clear();
-   m_filesView->rootItem()->setText(1, item->text(1));
-
-   populateDrawer(m_filesView->rootItem(), true);
-   m_locationName->document()->setData(item->text(1));
-   m_locationName->update();
-}
-
-bool isFolder(const AQString &name)
-{
-   bool result = false;
-   BPTR lock = Lock(name, SHARED_LOCK);
-   if (lock) {
-      FileInfoBlock *fib = (FileInfoBlock *)AllocDosObject(DOS_FIB, nullptr);
-      if (fib) {
-         Examine(lock, fib);
-         result = fib->fib_DirEntryType > 0;
-         FreeDosObject(DOS_FIB, fib);
-      }
-      UnLock(lock);
-   }
-   return result;
+   setDrawer(item->text(1));
 }
 
 void AQDialog::onFileItemActivated(AQObject *obj)
 {
    if (m_selectName) {
       AQListItem *item = (AQListItem *)(obj);
-      if (!m_drawerMode != isFolder(m_filesView->rootItem()->text(1) + "/" + item->text(0))) {
+      if (!m_drawerMode != qIsFolder(m_filesView->rootItem()->text(1) + "/" + item->text(0))) {
          m_selectName->document()->setData(item->text(0));
          m_selectName->update();
+         m_drawerIsSet = false;
       }
    }
 }
@@ -308,18 +319,14 @@ void AQDialog::onFileItemActivated(AQObject *obj)
 void AQDialog::onFileItemDoubleClicked(AQObject *obj)
 {
    AQListItem *item = (AQListItem *)(obj);
-   AQString path(m_filesView->rootItem()->text(1) + "/" + item->text(0));
-   if (isFolder(path)) {
-      vector<AQListItem *> sels = m_drawerView->selectedItems();
-      if (sels.size() != 1)
-         return;
+   AQString path(m_filesView->rootItem()->text(1));
+   if (path.endsWith(":"))
+      path += item->text(0);
+   else
+      path += "/" + item->text(0);
 
-      m_filesView->clear();
-      m_filesView->rootItem()->setText(1, path);
-      populateDrawer(m_filesView->rootItem(), true);
-
-      m_locationName->document()->setData(path);
-      m_locationName->update();
+   if (qIsFolder(path)) {
+      setDrawer(path);
    } else if (m_selectName)
       accept();
 }

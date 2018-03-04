@@ -274,6 +274,7 @@ void AQTextCursor::moveStartOfLine(bool keepAnchor)
 
    m_pos = m_doc.m_blocks[block].m_pos;
    m_posInBlock = 0;
+   m_wishX = m_posInBlock;
 
    if (!keepAnchor) {
       m_anchorPos = m_pos;
@@ -288,6 +289,7 @@ void AQTextCursor::moveEndOfLine(bool keepAnchor)
 
    m_pos = m_doc.m_blocks[block+1].m_pos - 1;
    m_posInBlock = m_doc.m_blocks[block+1].m_pos - m_doc.m_blocks[block].m_pos - 1;
+   m_wishX = m_posInBlock;
 
    if (!keepAnchor) {
       m_anchorPos = m_pos;

@@ -12,7 +12,6 @@ extern "C" void main(int argc, char **argv)
    devStudio.show();
 
    app.exec();
-   exit(0);
 }
 
 

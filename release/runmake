@@ -1,7 +1,10 @@
-.key projfolder configuration
-cd work:apps/ade
+.key projfolder/A,configuration
+.bra [
+.ket ]
+path >NIL: RAM: C: SYS:Utilities SYS:Rexxc  SYS:System S: SYS:Prefs SYS:WBStartup SYS:Tools SYS:Tools/Commodities
+cd Work:Apps/ADE
 execute ADE-startup
-cd <projfolder>
-make >pipe:adsbuild <configuration>
-echo after >pipe:adsbuild
-echo after2 >pipe:adsbuild
+echo "====== building [configuration] in [projfolder] ======" >pipe:adsbuild
+cd [projfolder]
+make [configuration] >pipe:adsbuild 
+echo "====== build completed ======" >pipe:adsbuild

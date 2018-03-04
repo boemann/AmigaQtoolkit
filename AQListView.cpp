@@ -10,7 +10,6 @@
 
 #include <AQScrollBar.h>
 
-#define ExpanderWidth 10
 #define IconWidth 18
 
 AQListItem::AQListItem(AQListView *lv)
@@ -148,6 +147,9 @@ AQListView::AQListView(AQWidget *parent)
    , m_rightIcon(AQIcon("right"))
    , m_downIcon(AQIcon("down"))
    , m_selectedItem(nullptr)
+   , m_treeMode(true)
+   , m_wordWrap(false)
+   , m_expanderWidth(10)
 {
    setBgPen(0); // no bg but we draw ourself
    setExpanding(true, true);
@@ -163,21 +165,31 @@ AQListView::~AQListView()
 {
 }
 
+void AQListView::setTreeMode(bool on)
+{
+   m_treeMode = on;
+}
+
+void AQListView::setWordWrap(bool on)
+{
+   m_wordWrap = on;
+}
+
 void AQListView::addTopLevelItem(AQListItem *item)
 {
    m_rootItem->addChild(item);
 }
 
-AQListItem *itemAtRecurse(const AQListItem *root, int h, int &x, int &y, int searchY)
+AQListItem *AQListView::itemAtRecurse(const AQListItem *root, int h, int &x, int &y, int searchY)
 {
    for (int i = 0; i < root->childCount(); i++) {
       AQListItem *c = root->child(i);
       y += h;
       if (searchY < y)
          return c;
-      if (c->isExpanded())
+      if (m_treeMode && c->isExpanded())
           if((c = itemAtRecurse(c, h, x, y, searchY))) {
-             x += ExpanderWidth;
+             x += m_expanderWidth;
              return c;
           }
    }
@@ -283,45 +295,61 @@ void AQListView::paintChildren(RastPort *rp, int &x, int &y, AQListItem *parent)
    for (int i = 0; i < parent->childCount(); ++i) {
       AQListItem *item = parent->child(i);
 
+      int top = y - rp->TxBaseline;
+      int len = item->text(0).size();
+
+      if (m_treeMode)
+         x += m_expanderWidth;
+
+      int availLen = len;
+      if (m_wordWrap)
+         availLen = (size().x - m_scrollBar->size().x - IconWidth - x - 4)
+                     / rp->TxWidth;
+
+      int bottom = top + (rp->TxHeight + 2) * ((len - 1)/ availLen + 1) - 2;
       if (item == m_selectedItem) {
          SetAPen(rp, 3);
          if (hasFocus())
-            RectFill(rp, 0, y -rp->TxBaseline - 1, size().x - 1, y + 2);
+            RectFill(rp, 0, top -1, size().x - m_scrollBar->size().x - 7, bottom);
          else {
-            int top = y - rp->TxBaseline -1;
-            Move(rp, 0, top);
-            Draw(rp, size().x - m_scrollBar->size().x - 2, top);
-            Draw(rp, size().x - m_scrollBar->size().x - 2, top + rp->TxHeight + 2);
-            Draw(rp, 0, top + rp->TxHeight + 2);
-            Draw(rp, 0, top);
+            Move(rp, 0, top - 1);
+            Draw(rp, size().x - m_scrollBar->size().x - 7, top - 1);
+            Draw(rp, size().x - m_scrollBar->size().x - 7, bottom);
+            Draw(rp, 0, bottom);
+            Draw(rp, 0, top -1);
          }
       }
 
-      if(item->expanderPolicy() > 0) {
-         if (item->childCount() || item->expanderPolicy() == 2) {
-            if (item->isExpanded())
-               m_downIcon.paint(rp, AQPoint(x , y - rp->TxBaseline), AQIcon::Small);
-            else
-               m_rightIcon.paint(rp, AQPoint(x , y - rp->TxBaseline), AQIcon::Small);
-         }
-      }
-
-      x += ExpanderWidth;
 
       if (!item->icon(0).isNull())
-      	item->icon(0).paint(rp, AQPoint(x, y - rp->TxBaseline), AQIcon::Small);
+         item->icon(0).paint(rp, AQPoint(x, top), AQIcon::Small);
 
       SetAPen(rp, 1);
-      Move(rp, x + IconWidth, y);
-      Text(rp, item->text(0), item->text(0).size());
+      char *str = item->text(0);
+      do {
+         Move(rp, x + IconWidth, y);
+         Text(rp, str, aqMin(availLen, len));
+         len -= availLen;
+         str += availLen;
+         y += rp->TxHeight + 2;
+      } while (len>0);
 
-      y += rp->TxHeight + 2;
-      if (item->childCount() && item->isExpanded()) {
-         paintChildren(rp, x, y, item);
+      if (m_treeMode) {
+         if (item->childCount() && item->isExpanded()) {
+            paintChildren(rp, x, y, item);
+         }
 
+         x -= m_expanderWidth;
+
+         if(item->expanderPolicy() > 0) {
+            if (item->childCount() || item->expanderPolicy() == 2) {
+               if (item->isExpanded())
+                  m_downIcon.paint(rp, AQPoint(x, top), AQIcon::Small);
+               else
+                  m_rightIcon.paint(rp, AQPoint(x , top), AQIcon::Small);
+            }
+         }
       }
-
-      x -= ExpanderWidth;
    }
 }
 
@@ -462,7 +490,7 @@ bool AQListView::mouseDoubleClickEvent(const IntuiMessage &msg)
    AQListItem *item = itemAtRecurse(m_rootItem, h, x, y, clickPoint.y);
 
    if (item) {
-      if (clickPoint.x >= x + ExpanderWidth) {
+      if (!m_treeMode || clickPoint.x >= x + m_expanderWidth) {
          emit("itemDoubleClicked", item);
       }
    }
@@ -484,7 +512,7 @@ bool AQListView::mousePressEvent(const IntuiMessage &msg)
    AQListItem *item = itemAtRecurse(m_rootItem, h, x, y, clickPoint.y);
 
    if (item) {
-      if (clickPoint.x < x + ExpanderWidth) {
+      if (m_treeMode && clickPoint.x < x + m_expanderWidth) {
          item->setExpanded(!item->isExpanded());
          if (item->isExpanded())
             emit("itemExpanded", item);

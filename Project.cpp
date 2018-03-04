@@ -1,6 +1,10 @@
 #include <proto/dos.h>
+#include <dos/dostags.h>
 
 #include "Project.h"
+
+
+#include <stdio.h>
 
 Project::Project(const AQString &projectPath)
    : m_projectPath(projectPath)
@@ -19,7 +23,7 @@ bool advanceToNonWhite(char *&s)
       s++;
 
    return *s != 0;
-}
+} 
 
 void advanceToWhite(char *&s)
 {
@@ -94,12 +98,17 @@ AQString Project::filename(int index)
 
 void Project::build()
 {
+   BPTR errorFH =  Open("RAM:hej", MODE_NEWFILE);
+   
    AQString cmd("run >nil: runmake ");
-   cmd += m_projectPath;
-   cmd += "/";
+   cmd += m_projectPath + " ";
    cmd += m_configuration;
-//   cmd += " >nil:";
-   Execute(cmd, 0, Output());
+   SystemTags(cmd,
+      NP_Error, errorFH,
+//      NP_CloseError, false,
+      TAG_DONE);
+
+   Close(errorFH);
 }
 
 void Project::run()
@@ -110,6 +119,6 @@ void Project::run()
    cmd += m_configuration;
    cmd += "/";
    cmd += m_projectName;
-   Execute(cmd, 0, 0);
+   SystemTags(cmd, TAG_DONE);
 }
 
