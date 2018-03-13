@@ -32,6 +32,7 @@ AQWidget::AQWidget(AQWidget *parent)
    , m_windowFlags(AQWindow::Normal)
    , m_firstClickSeconds(0)
    , m_firstClickMicros(0)
+   , m_menu(nullptr)
 {
    setParent(parent);
 }
@@ -77,6 +78,11 @@ void AQWidget::hide()
        m_window->hide();
        m_window = nullptr;
    }
+}
+
+void AQWidget::setMenu(AQMenu *menu)
+{
+   m_menu = menu;
 }
 
 void AQWidget::setWindowTitle(const AQString &title)
@@ -400,8 +406,12 @@ bool AQWidget::event(IntuiMessage &msg)
       case MENUUP:
          return mouseReleaseEvent(msg);
 
-      case SELECTDOWN:
-      case MENUDOWN: {
+      case MENUDOWN:
+         if (contextMenuPolicy() == 0) {
+            return false;
+         }
+
+      case SELECTDOWN: {
          bool res = mousePressEvent(msg);
          if (DoubleClick(m_firstClickSeconds, m_firstClickMicros, msg.Seconds, msg.Micros))
             res |= mouseDoubleClickEvent(msg);

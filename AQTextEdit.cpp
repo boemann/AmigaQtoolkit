@@ -320,9 +320,9 @@ bool AQTextEdit::mousePressEvent(const IntuiMessage &msg)
          m_cursor->setPosition(pos, msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
 
       AQMenu *menu = new AQMenu();
-      menu->addItem(m_cutAction->text());
-      menu->addItem(m_copyAction->text());
-      menu->addItem(m_pasteAction->text());
+      menu->addAction(m_cutAction);
+      menu->addAction(m_copyAction);
+      menu->addAction(m_pasteAction);
       menu->exec(mapToGlobal(AQPoint(msg.MouseX, msg.MouseY)));
    }
    else

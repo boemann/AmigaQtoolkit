@@ -17,7 +17,7 @@
 
 #include <AQApplication.h>
 #include <AQWidget.h>
-
+#include <AQMenu.h>
 
 AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    : m_window(nullptr)
@@ -53,7 +53,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    WA_Left, widget->pos().x,
    WA_Top, widget->pos().y,
    WA_Activate, TRUE,
-   WA_Flags, WFLG_BORDERLESS,
+   WA_Flags, WFLG_BORDERLESS | WFLG_RMBTRAP,
    WA_SimpleRefresh, TRUE,
    WA_MinWidth, 5,
    WA_MinHeight, 5,
@@ -63,7 +63,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 
    m_window->UserPort = aqApp->userPort();
 
-   ModifyIDCMP(m_window, CLOSEWINDOW | MENUPICK | IDCMP_VANILLAKEY | IDCMP_RAWKEY
+   ModifyIDCMP(m_window, CLOSEWINDOW | IDCMP_VANILLAKEY | IDCMP_RAWKEY
     | IDCMP_REFRESHWINDOW | IDCMP_MOUSEBUTTONS | IDCMP_MOUSEMOVE
     | IDCMP_ACTIVEWINDOW | IDCMP_INACTIVEWINDOW
        | IDCMP_INTUITICKS | IDCMP_CHANGEWINDOW);
@@ -93,6 +93,8 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 
 AQWindow::~AQWindow()
 {
+   ClearMenuStrip(m_window);
+
    hide();
 
    if (m_visualInfo) {
@@ -245,6 +247,7 @@ void AQWindow::event(IntuiMessage &msg)
             }
             receiver = receiver->parent();
          }
+
          // receiver is valid if we broke loop because event() gave true
          if (msg.Code == SELECTDOWN || msg.Code == MIDDLEDOWN || msg.Code == MENUUP)
             m_buttonDownWidget = receiver;
@@ -252,6 +255,10 @@ void AQWindow::event(IntuiMessage &msg)
             m_buttonDownWidget = nullptr;
       } else
          testFrameClick(msg);
+      if (!receiver && msg.Code == MENUDOWN && m_widget->m_menu) {
+         m_widget->m_menu->exec(AQPoint());
+         m_buttonDownWidget = nullptr;
+      }
 
       break;
    }
@@ -281,10 +288,6 @@ void AQWindow::event(IntuiMessage &msg)
             msg.MouseY -= m_clientPos.y;
 
             aqApp->setHoveredWidget(m_widget->widgetAt(msg.MouseX, msg.MouseY));
-            if (aqApp->hoveredWidget() && aqApp->hoveredWidget()->contextMenuPolicy() == 2)
-               m_window->Flags |= WFLG_RMBTRAP;
-            else
-               m_window->Flags &= ~WFLG_RMBTRAP;
          }
       }
 
@@ -493,6 +496,7 @@ void AQWindow::testFrameClick(const IntuiMessage &msg)
          WindowToFront(m_window);
          break;
       }
+      return;
    }
 
    if (msg.Code == SELECTUP) {
@@ -505,8 +509,9 @@ void AQWindow::testFrameClick(const IntuiMessage &msg)
       case MinimizeButton:
          break;
       }
-      m_winControl = WidgetArea; // do this or we will keep size / move
    }
+   m_winControl = WidgetArea; // do this or we will keep size / move
+
 }
 
 void AQWindow::hoverTest(const IntuiMessage &msg, bool forceSet)

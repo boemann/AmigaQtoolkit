@@ -370,7 +370,7 @@ AQTextDoc::AQTextDoc(AQObject *parent)
    m_capacity = 1000;
    m_data = new char[m_capacity];
    m_data[0] = 0;
-   strcpy(m_data, "fgfdg");
+   strcpy(m_data, "");
    m_size=strlen(m_data);
    updateBlocks();
 }

@@ -5,16 +5,25 @@
 
 #include <AQString.h>
 
+class AQAction;
+struct NewMenu;
+
 class AQMenu : public AQWidget
 {
 public:
-   AQMenu();
+   AQMenu(const AQString &title = AQString());
    ~AQMenu();
 
-   void addItem(const AQString &text);
+   void setMenubarMode(bool on);
+
    void addSeparator();
+   void addAction(AQAction *action);
+   void addMenu(AQMenu *menu);
 
    void exec(const AQPoint &pos);
+   void popup(const AQPoint &pos);
+
+   NewMenu *buildGadMenu(NewMenu *gaditem);
 
 protected:
    virtual void paintEvent(RastPort *rp, const AQRect &rect);
@@ -26,15 +35,17 @@ protected:
    virtual bool mouseReleaseEvent(const IntuiMessage &msg);
 
 private:
-   void addEntry(const AQString &text, int type, const AQString &shortcut, AQMenu *subMenu);
+   void updateSize();
 
-   vector<AQString> m_entryText;
    vector<int> m_entryType;
-   vector<AQString> m_entryShortCut;
-   vector<AQMenu *> m_entrySubMenu;
+   vector<AQMenu *> m_entryMenu;
+   vector<AQAction *> m_entryAction;
    int m_hoveredItem;
-   bool m_visible;
+   bool m_execed;
    bool m_firstUpReceived;
+   bool m_barMode;
+   AQString m_title;
+   AQMenu *m_shownSubMenu;
 };
    
 #endif

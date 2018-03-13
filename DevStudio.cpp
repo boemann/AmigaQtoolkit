@@ -8,6 +8,7 @@
 #include <AQAction.h>
 #include <AQStatusBar.h>
 #include <AQLabel.h>
+#include <AQMenu.h>
 
 #include <proto/dos.h>
 
@@ -43,9 +44,15 @@ DevStudio::DevStudio()
    setMinimumSize(AQPoint(60, 40));
    setPos(AQPoint(0, 20));
 
+   AQAction *newAction = new AQAction(this);
+   newAction->setShortcut("Amiga+N");
+   newAction->setText("New...");
+   Connect<DevStudio>(newAction, "triggered", this, &DevStudio::openFile);
+   aqApp->addAction(newAction);
+
    AQAction *openAction = new AQAction(this);
    openAction->setShortcut("Amiga+O");
-   openAction->setText("Open...");
+   openAction->setText("Open File...");
    Connect<DevStudio>(openAction, "triggered", this, &DevStudio::openFile);
    aqApp->addAction(openAction);
 
@@ -57,13 +64,13 @@ DevStudio::DevStudio()
 
    AQAction *saveAction = new AQAction(this);
    saveAction->setShortcut("Amiga+S");
-   saveAction->setText("Save");
+   saveAction->setText("Save File");
    Connect<DevStudio>(saveAction, "triggered", this, &DevStudio::saveFile);
    aqApp->addAction(saveAction);
 
    AQAction *saveAsAction = new AQAction(this);
    saveAsAction->setShortcut("Shift+Amiga+S");
-   saveAsAction->setText("Save As...");
+   saveAsAction->setText("Save File As...");
    Connect<DevStudio>(saveAsAction, "triggered", this, &DevStudio::saveFileAs);
    aqApp->addAction(saveAsAction);
 
@@ -73,6 +80,12 @@ DevStudio::DevStudio()
    Connect<DevStudio>(saveAllAction, "triggered", this, &DevStudio::saveAll);
    aqApp->addAction(saveAllAction);
 
+   AQAction *quitAction = new AQAction(this);
+   quitAction->setShortcut("Amiga+Q");
+   quitAction->setText("Quit");
+   Connect<DevStudio>(quitAction, "triggered", this, &DevStudio::closeEvent);
+   aqApp->addAction(quitAction);
+
    AQAction *runAction = new AQAction(this);
    runAction->setShortcut("F5");
    runAction->setText("Run Debug");
@@ -80,7 +93,7 @@ DevStudio::DevStudio()
    aqApp->addAction(runAction);
 
    AQAction *buildProjectAction = new AQAction(this);
-   buildProjectAction->setShortcut("F7");
+   buildProjectAction->setShortcut("F6");
    buildProjectAction->setText("Build Project");
    Connect<DevStudio>(buildProjectAction, "triggered", this, &DevStudio::buildProject);
    aqApp->addAction(buildProjectAction);
@@ -116,6 +129,34 @@ DevStudio::DevStudio()
       m_pipeBuffer = new char[600];
       aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
    }
+
+   AQMenu *menubar = new AQMenu();
+   menubar->setMenubarMode(true);
+
+   AQMenu *projectMenu = new AQMenu("Project");
+   projectMenu->addAction(newAction);
+   projectMenu->addAction(openAction);
+   projectMenu->addAction(openProjectAction);
+   projectMenu->addSeparator();
+   projectMenu->addAction(saveAction);
+   projectMenu->addAction(saveAsAction);
+   projectMenu->addAction(saveAllAction);
+   projectMenu->addSeparator();
+   projectMenu->addAction(quitAction);
+   menubar->addMenu(projectMenu);
+
+   AQMenu *editMenu = new AQMenu("Edit");
+   menubar->addMenu(editMenu);
+
+   AQMenu *buildMenu = new AQMenu("Build");
+   buildMenu->addAction(buildProjectAction);
+   menubar->addMenu(buildMenu);
+
+   AQMenu *debugMenu = new AQMenu("Debug");
+   debugMenu->addAction(runAction);
+   menubar->addMenu(debugMenu);
+
+   setMenu(menubar);
 
    setPreferredSize(AQPoint(640, 496));
 }

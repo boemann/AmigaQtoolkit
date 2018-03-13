@@ -13,10 +13,16 @@ public:
    AQAction(AQObject *parent = nullptr);
    ~AQAction();
 
+   void setEnabled(bool on);
+   bool enabled() const;
+   
    void setText(const AQString &text);
    AQString text() const;
+
    void setShortcut(const AQString &sc);
+   AQString shortcut() const;
    bool matchShortcut(const IntuiMessage &msg);
+
    void trigger();
 
 private:
@@ -27,6 +33,7 @@ private:
    bool m_scAlt;
    bool m_scShift;
    char m_scCode;
+   bool m_enabled;
    ULONG m_scClass;
 };
    

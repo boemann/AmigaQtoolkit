@@ -20,8 +20,10 @@ public:
    DevStudio();
    ~DevStudio();
 
+
    void openProject();
    void openProject(const AQString &projectPath);
+   void newFile();
    void openFile();
    void saveFileAs();
    void saveFile();

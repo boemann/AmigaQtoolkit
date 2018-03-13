@@ -14,11 +14,22 @@ AQAction::AQAction(AQObject *parent)
    , m_scShift(false)
    , m_scCode(0)
    , m_scClass(IDCMP_VANILLAKEY)
+   , m_enabled(true)
 {
-}
+} 
 
 AQAction::~AQAction()
 {
+}
+
+void AQAction::setEnabled(bool on)
+{
+   m_enabled = on;
+}
+
+bool AQAction::enabled() const
+{
+   return m_enabled;
 }
 
 void AQAction::setText(const AQString &text)
@@ -70,6 +81,11 @@ void AQAction::setShortcut(const AQString &sc)
    }
 }
 
+AQString AQAction::shortcut() const
+{
+   return m_shortcut;
+}
+
 bool AQAction::matchShortcut(const IntuiMessage &msg)
 {
    if (!m_scShift != !(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT)))
@@ -96,7 +112,8 @@ bool AQAction::matchShortcut(const IntuiMessage &msg)
 
 void AQAction::trigger()
 {
-   emit("triggered");
+   if (m_enabled)
+      emit("triggered");
 }
 
 

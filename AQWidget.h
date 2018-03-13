@@ -15,6 +15,7 @@ struct Region;
 class AQWindow;
 class AQLayout;
 class AQAction;
+class AQMenu;
 
 class AQWidget : public AQObject
 {
@@ -31,6 +32,8 @@ public:
 
    bool isEnabled() const { return m_enabled;}
    void setEnabled(bool enabled) {m_enabled = enabled;}
+
+   void setMenu(AQMenu *menu);
 
    void setWindowTitle(const AQString &title);
    void setWindowModality(int modal); // 0=not (default) 1 = application modal
@@ -180,6 +183,7 @@ private:
    bool m_frameless;
    int m_windowModality;
    UWORD m_windowFlags;
+   AQMenu *m_menu;
 };
    
 #endif
