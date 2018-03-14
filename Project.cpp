@@ -98,17 +98,10 @@ AQString Project::filename(int index)
 
 void Project::build()
 {
-   BPTR errorFH =  Open("RAM:hej", MODE_NEWFILE);
-   
    AQString cmd("run >nil: runmake ");
    cmd += m_projectPath + " ";
    cmd += m_configuration;
-   SystemTags(cmd,
-      NP_Error, errorFH,
-//      NP_CloseError, false,
-      TAG_DONE);
-
-   Close(errorFH);
+   Execute(cmd, 0, Output());
 }
 
 void Project::run()

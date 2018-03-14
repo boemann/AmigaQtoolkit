@@ -6,5 +6,5 @@ cd Work:Apps/ADE
 execute ADE-startup
 echo "====== building [configuration] in [projfolder] ======" >pipe:adsbuild
 cd [projfolder]
-make [configuration] >pipe:adsbuild 
+sh -c "make [configuration] >pipe:adsbuild 2>&1"
 echo "====== build completed ======" >pipe:adsbuild
