@@ -57,6 +57,10 @@ void Project::loadMakefile()
          parsingFiles = true;
          s = buf + 7;
       }
+      if (strncmp(buf, "HDRS = ", 7) == 0) {
+         parsingFiles = true;
+         s = buf + 7;
+      }
       if (parsingFiles) {
          while (advanceToNonWhite(s)) {
             if (*s != '\\') {
@@ -70,8 +74,10 @@ void Project::loadMakefile()
             ++s;
          }
          int l = strlen(buf);
-         if (l < 2 || buf[strlen(buf) - 2] != '\\')
-            break;
+         if (l < 2 || buf[l - 2] != '\\') {
+            parsingFiles = false;
+            continue;
+         }
       }
    }
 

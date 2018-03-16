@@ -31,6 +31,32 @@ SRCS = AQApplication.cpp \
        Project.cpp \
        main.cpp 
 
+HDRS = AQApplication.h \
+       AQKernel.h \
+       AQObject.h \
+       AQClipboard.h \
+       AQAction.h \
+       AQString.h \
+       AQWidget.h \
+       AQWindow.h \
+       AQLabel.h \
+       AQButton.h \
+       AQDialog.h \
+       AQIcon.h \
+       AQLayout.h \
+       AQListView.h \
+       AQMenu.h \
+       AQScrollBar.h \
+       AQSplitter.h \
+       AQTextEdit.h \
+       AQTextDoc.h \
+       AQLineEdit.h \
+       AQStatusBar.h \
+       AQMainWindow.h \
+       DevStudio.h \
+       Project.h \
+       main.h 
+
 _OBJS = $(SRCS)
 __OBJS = $(patsubst %.c,%.cpp, $(_OBJS))
 RELOBJS = $(patsubst %.cpp,release/%.o, $(__OBJS))
