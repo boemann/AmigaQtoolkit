@@ -8,6 +8,7 @@
 #include <libraries/gadtools.h>
 #include <graphics/gfxbase.h>
 #include <devices/inputevent.h>
+#include <utility/hooks.h>
 
 #include <proto/exec.h>
 #include <proto/graphics.h>
@@ -18,6 +19,13 @@
 #include <AQApplication.h>
 #include <AQWidget.h>
 #include <AQMenu.h>
+
+void backfill()
+{
+
+}
+
+Hook refreshHook;
 
 AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    : m_window(nullptr)
@@ -31,6 +39,8 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    , m_buttonDownWidget(nullptr)
    , m_dirtyRegion(NewRegion())
 {
+   refreshHook.h_Entry = (ULONG (*)() )backfill;
+
    m_pubScreen = LockPubScreen(NULL);
    if (m_pubScreen) {
       m_visualInfo = GetVisualInfo(m_pubScreen, TAG_DONE);
@@ -59,6 +69,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    WA_MinHeight, 5,
    WA_ReportMouse, TRUE,
    WA_NewLookMenus, TRUE,
+   WA_BackFill, (ULONG)&refreshHook,
    TAG_DONE, 0L);
 
    m_window->UserPort = aqApp->userPort();
@@ -403,6 +414,28 @@ void AQWindow::paintDirty()
    ClearRegion(m_dirtyRegion);
    ScrollLayer(0, rp->Layer, -pos.x, -pos.y);
 }
+
+void AQWindow::scroll(const AQPoint &delta, const AQRect &rect)
+{
+   AQRect r(rect.topLeft + m_clientPos, rect.bottomRight + m_clientPos);
+
+   if (m_window) {
+      paintDirty(); // make sure any previous scrolls have been dealt with
+      ScrollWindowRaster(m_window, delta.x, delta.y, r.topLeft.x, r.topLeft.y,
+                         r.bottomRight.x, r.bottomRight.y);
+      // should also update the exposed
+      if (delta.y > 0)
+         markDirty(AQRect(
+                    AQPoint(rect.topLeft.x, rect.bottomRight.y - delta.y)
+                  , rect.bottomRight));
+
+      if (delta.y < 0)
+         markDirty(AQRect(rect.topLeft,
+                     AQPoint(rect.bottomRight.x, rect.topLeft.y - delta.y)));
+
+   }
+}
+
 
 void AQWindow::markDirty(const AQRect &rect)
 {

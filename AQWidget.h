@@ -64,6 +64,9 @@ public:
    void setLayout(AQLayout *layout);
    void updateGeometry();
 
+
+   void scroll(const AQPoint &delta, const AQRect &rect);
+
    void update();
    void update(const AQRect &rect);
 

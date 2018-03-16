@@ -296,6 +296,23 @@ void AQWidget::update(const AQRect &rect)
       m_window->markDirty(rect);
 }
 
+void AQWidget::scroll(const AQPoint &delta, const AQRect &rect)
+{
+   AQRect r(rect.topLeft + m_pos, rect.bottomRight + m_pos);
+
+   if (delta.y < -r.height() || delta.y > r.height()
+     || delta.x < -r.width() || delta.x > r.width()) {
+      update(rect);
+      return;
+   }
+
+   if (m_parent)
+      m_parent->scroll(delta, r);
+   else if (m_window) {
+      m_window->scroll(delta, rect);
+   }
+}
+
 AQWidget *AQWidget::parent()
 {
    return m_parent;

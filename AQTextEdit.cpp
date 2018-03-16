@@ -83,10 +83,23 @@ AQScrollBar *AQTextEdit::verticalScrollBar() const
 void AQTextEdit::scrollUpdate(int v)
 {
    AQRect area(2, 2, size().x - 4, size().y - 4);
-   if (m_scrollBar)
-      area.bottomRight.x -= m_scrollBar->size().x + 2;
 
-   update(area);
+   if (!m_scrollBar) {
+      update(area);
+      return;
+   }
+
+   area.bottomRight.x -= m_scrollBar->size().x + 2;
+
+   int offBefore = (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
+   int offAfter = (v / m_doc->lineHeight()) * m_doc->lineHeight();
+
+   int dy = offAfter - offBefore;
+
+   scroll(AQPoint(0, dy), area);
+
+   if (dy < 0)
+      update(AQRect(AQPoint(2, area.bottomRight.y-10), area.bottomRight));
 }
 
 void AQTextEdit::cut()

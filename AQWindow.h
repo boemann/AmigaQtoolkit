@@ -37,6 +37,8 @@ public:
 
    void hide();
 
+   void scroll(const AQPoint &delta, const AQRect &rect);
+
    void markDirty(const AQRect &rect);
    static void setMouseGrabber(AQWidget *w);
 
