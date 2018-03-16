@@ -69,6 +69,7 @@ public:
    AQListItem *itemAbove(const AQListItem *item) const;
    AQListItem *itemBelow(const AQListItem *item) const;
 
+   void selectItem(AQListItem *item);
    vector<AQListItem *> selectedItems() const;
    void clear();
 

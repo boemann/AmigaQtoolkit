@@ -261,6 +261,13 @@ AQListItem *AQListView::itemBelow(const AQListItem *item) const
    return nullptr;
 }
 
+void AQListView::selectItem(AQListItem *item)
+{
+   m_selectedItem = item;
+   emit("itemActivated", item);
+   update();
+}
+
 vector<AQListItem *> AQListView::selectedItems() const
 {
    vector<AQListItem*> res;
@@ -405,9 +412,7 @@ bool AQListView::keyEvent(const IntuiMessage &msg)
                return true;
             } else
                if (m_selectedItem->parentItem()->parentItem()) {
-                  m_selectedItem = m_selectedItem->parentItem();
-                  emit("itemActivated", m_selectedItem);
-                  update();
+                  selectItem(m_selectedItem->parentItem());
                }
          }
          break;
@@ -416,9 +421,7 @@ bool AQListView::keyEvent(const IntuiMessage &msg)
              return true;
          if (m_selectedItem->parentItem()) {
             if (m_selectedItem->isExpanded() && m_selectedItem->childCount() > 0) {
-               m_selectedItem = m_selectedItem->child(0);
-               emit("itemActivated", m_selectedItem);
-               update();
+               selectItem(m_selectedItem->child(0));
                return true;
             } else {
                m_selectedItem->setExpanded(true);
@@ -430,18 +433,14 @@ bool AQListView::keyEvent(const IntuiMessage &msg)
       case Key_Up: {
          AQListItem *item = itemAbove(m_selectedItem);
          if (item) {
-            m_selectedItem = item;
-            emit("itemActivated", m_selectedItem);
-            update();
+            selectItem(item);
          }
          break;
       }
       case Key_Down: {
          AQListItem *item = itemBelow(m_selectedItem);
          if (item) {
-            m_selectedItem = item;
-            emit("itemActivated", m_selectedItem);
-            update();
+            selectItem(item);
          }
          break;
       }
@@ -517,8 +516,7 @@ bool AQListView::mousePressEvent(const IntuiMessage &msg)
          if (item->isExpanded())
             emit("itemExpanded", item);
       } else {
-         m_selectedItem = item;
-         emit("itemActivated", item);
+            selectItem(item);
       }
    }
    update();
