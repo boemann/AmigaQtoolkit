@@ -2,17 +2,14 @@
 
 #include <graphics/gfxbase.h>
 
-#ifdef __GNUC__
 #include <proto/graphics.h>
-#else
-#include <pragma/graphics_lib.h>
-#endif
 
 AQButton::AQButton(bool toolMode, AQWidget *parent)
    : AQWidget(parent)
    , m_pressed(false)
    , m_toolMode(toolMode)
    , m_hovered(false)
+   , m_checkable(false)
 {
    setBgPen(-1); // no bg but we draw ourself
 
@@ -28,6 +25,11 @@ AQButton::AQButton(bool toolMode, AQWidget *parent)
 
 AQButton::~AQButton()
 {
+}
+
+void AQButton::setCheckable(bool c)
+{
+   m_checkable = c;
 }
 
 void AQButton::setText(const AQString &text)
@@ -106,7 +108,10 @@ void AQButton::paintEvent(RastPort *rp, const AQRect &rect)
 
 bool AQButton::mousePressEvent(const IntuiMessage &msg)
 {
-   m_pressed = true;
+   if (m_checkable)
+      m_pressed = !m_pressed;
+   else
+      m_pressed = true;
    update();
    return true;
 }
@@ -118,9 +123,11 @@ bool AQButton::mouseMoveEvent(const IntuiMessage &msg)
 
 bool AQButton::mouseReleaseEvent(const IntuiMessage &msg)
 {
-   m_pressed = false;
+   if (!m_checkable)
+      m_pressed = false;
+
    update();
-   emit("clicked", true);
+   emit("clicked", m_checkable ? m_pressed : true);
    return true;
 }
 

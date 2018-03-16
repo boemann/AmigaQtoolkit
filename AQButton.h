@@ -10,6 +10,7 @@ public:
    AQButton(bool toolMode, AQWidget *parent = nullptr);
    ~AQButton();
 
+   void setCheckable(bool c);
    void setText(const AQString &text);
    void setIcon(const AQIcon &icon);
 
@@ -27,6 +28,7 @@ private:
    bool m_pressed;
    bool m_toolMode;
    bool m_hovered;
+   bool m_checkable;
 };
    
 #endif
