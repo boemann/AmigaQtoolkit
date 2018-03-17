@@ -7,7 +7,7 @@
 
 AQString::AQString()
    : m_d(new Private())
-{ 
+{
 }
 
 AQString::AQString(const AQString &o)
@@ -24,7 +24,7 @@ AQString::AQString(const char *cstr, int len)
    else
       len = aqMin(strlen(cstr), len);
 
-   if (len <= 0)
+   if (len < 0)
       return; // a null string
 
    m_d->size = len;
@@ -116,17 +116,86 @@ bool AQString::endsWith(const AQString &ending) const
 
 bool AQString::contains(const AQString &sub) const
 {
+   return indexOf(sub) != -1;
+}
 
+int AQString::indexOf(const AQString sub) const
+{
    if (sub.isEmpty())
-      return true;
+      return 0;
 
    if (isEmpty())
-      return false;
+      return -1;
 
    if (sub.m_d->size > m_d->size)
-      return false;
+      return -1;
 
-   return strstr(m_d->data, sub.m_d->data) != nullptr;
+   char *pos = strstr(m_d->data, sub.m_d->data);
+   if (pos == nullptr)
+      return -1;
+   return  pos - m_d->data;
+}
+
+AQString AQString::left(int n) const
+{
+   if (isEmpty())
+      return AQString();
+
+   return AQString(m_d->data, n);
+}
+
+AQString AQString::mid(int position, int n) const
+{
+   if (isEmpty())
+      return AQString();
+
+   if (position < 0 || position >= m_d->size)
+      return AQString();
+
+   return AQString(m_d->data + position, n);
+}
+
+AQString AQString::right(int n) const
+{
+   if (isEmpty())
+      return AQString();
+
+   if (n > m_d->size)
+      return *this;
+   return AQString(m_d->data-n);
+}
+
+const int maxdigits[36] = {31,15,15,9,9,9,7,9,9,8,8,8,8,8,7,7,7};
+
+int AQString::toInt(bool *ok = nullptr, int base=10) const
+{
+   if (ok)
+      *ok = false;
+
+   if (isEmpty())
+      return 0;
+
+   int i = 0;
+   bool negative = false;
+   if (m_d->data[i] == '+')
+      ++i;
+   else if (m_d->data[i] == '-') {
+      negative = true;
+      ++i;
+   } else if (m_d->data[i] < '0' || m_d->data[i] > ('0' + base - 1))
+      return 0;
+
+   int number = 0;
+   while (m_d->data[i] >= '0' && m_d->data[i] < ('0' + base)) {
+      number *= base;
+      number += m_d->data[i] - '0';
+      ++i;
+   }
+   
+   if (ok)
+      *ok = true;
+
+   return negative ? -number : number;
 }
 
 bool AQString::operator==(const AQString &other) const

@@ -34,8 +34,13 @@ public:
     
    bool endsWith(const AQString &ending) const;
    bool contains(const AQString &sub) const;
+   int indexOf(const AQString sub) const;
 
+   AQString left(int n) const;
+   AQString mid(int position, int n = -1) const;
    AQString right(int n) const;
+
+   int toInt(bool *ok = nullptr, int base=10) const;
 
    operator char*() const;
    bool operator==(const AQString &other) const;

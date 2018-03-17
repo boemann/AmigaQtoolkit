@@ -5,6 +5,7 @@
 #include <AQWidget.h>
 
 #include <AQAction.h>
+#include <stdio.h>
 
 AQAction::AQAction(AQObject *parent)
    : AQObject(parent)
