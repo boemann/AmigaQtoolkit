@@ -104,7 +104,12 @@ AQString Project::filename(int index)
 
 void Project::build()
 {
-   AQString cmd("run >nil: runmake ");
+   AQString cmd("protect ");
+   cmd += m_projectPath;
+   cmd += "/release/runmake +s";
+   Execute(cmd, 0, Output());
+
+   cmd = AQString("run >nil: runmake ");
    cmd += m_projectPath + " ";
    cmd += m_configuration;
    Execute(cmd, 0, Output());
