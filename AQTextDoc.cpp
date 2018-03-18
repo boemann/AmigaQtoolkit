@@ -550,6 +550,15 @@ int AQTextDoc::blockNumber(int pos)
    return -1; // can never happen
 }
 
+AQTextBlock AQTextDoc::findBlockByLineNumber(int line) const
+{ 
+   if (line >= m_numBlocks)
+      line = m_numBlocks - 1;
+
+   return m_blocks[line];
+}
+
+
 void AQTextDoc::pushData(int pos, int n)
 {
    if (m_capacity > m_size + n + 1)

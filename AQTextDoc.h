@@ -87,6 +87,7 @@ public:
 
    void render(RastPort *rp, AQPoint docOffset, AQPoint botRight);
    int blockNumber(int pos);
+   AQTextBlock findBlockByLineNumber(int line) const;
 
    int positionOfPoint(const AQPoint &p) const;
 
