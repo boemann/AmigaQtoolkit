@@ -20,13 +20,13 @@
 struct DocInfo
 {
    DocInfo() {}
-   DocInfo(DevStudio *studio, class AQString &path);
+   DocInfo(DevStudio *studio, const AQString &path);
    AQTextDoc *doc;
    AQTextCursor *cursor;
    AQPoint offset;
 };
 
-DocInfo::DocInfo(DevStudio *studio, class AQString &path)
+DocInfo::DocInfo(DevStudio *studio, const AQString &path)
 {
    doc = new AQTextDoc(studio);
    doc->loadFile(path);
@@ -90,14 +90,26 @@ DevStudio::DevStudio()
    AQAction *runAction = new AQAction(this);
    runAction->setShortcut("F5");
    runAction->setText("Run Debug");
-   Connect<DevStudio>(runAction, "triggered", this, &DevStudio::run);
+   Connect<DevStudio>(runAction, "triggered", this, &DevStudio::onRun);
    aqApp->addAction(runAction);
 
    AQAction *buildProjectAction = new AQAction(this);
    buildProjectAction->setShortcut("F6");
    buildProjectAction->setText("Build Project");
-   Connect<DevStudio>(buildProjectAction, "triggered", this, &DevStudio::buildProject);
+   Connect<DevStudio>(buildProjectAction, "triggered", this, &DevStudio::onBuildProject);
    aqApp->addAction(buildProjectAction);
+
+   AQAction *prevMessageAction = new AQAction(this);
+   prevMessageAction->setShortcut("Shift+F8");
+   prevMessageAction->setText("Previous message");
+   Connect<DevStudio>(prevMessageAction, "triggered", this, &DevStudio::onPrevMessage);
+   aqApp->addAction(prevMessageAction);
+
+   AQAction *nextMessageAction = new AQAction(this);
+   nextMessageAction->setShortcut("F8");
+   nextMessageAction->setText("Next message");
+   Connect<DevStudio>(nextMessageAction, "triggered", this, &DevStudio::onNextMessage);
+   aqApp->addAction(nextMessageAction);
 
    setWindowTitle("Amiga Development Studio");
 
@@ -114,6 +126,7 @@ DevStudio::DevStudio()
    m_outputView->setTreeMode(false);
    m_outputView->setWordWrap(true);
    setBottomSideBar(m_outputView);
+   Connect<DevStudio>(m_outputView, "itemActivated", this, &DevStudio::onOutputItemActivated);
 
    m_textEdit->setFocus();
    m_currentDoc = new DocInfo();
@@ -147,6 +160,9 @@ DevStudio::DevStudio()
 
    AQMenu *buildMenu = new AQMenu("Build");
    buildMenu->addAction(buildProjectAction);
+   buildMenu->addSeparator();
+   buildMenu->addAction(prevMessageAction);
+   buildMenu->addAction(nextMessageAction);
    menubar->addMenu(buildMenu);
 
    AQMenu *debugMenu = new AQMenu("Debug");
@@ -244,6 +260,8 @@ void DevStudio::openFile()
    AQDialog *dialog = new AQDialog(AQDialog::OpenButton | AQDialog::CancelButton
                   | AQDialog::SelectionName);
    dialog->setWindowTitle("Open File");
+
+   // Let's figure out what folder to start dialog in
    map<AQString, DocInfo *>::iterator it = m_loadedDocs.begin();
    while (it != m_loadedDocs.end()) {
       if (it->second->doc == m_textEdit->document()) {
@@ -255,22 +273,53 @@ void DevStudio::openFile()
    if (it == m_loadedDocs.end())
       dialog->setDrawer(m_project->projectPath());
 
+   // Now let's ask user
    if (dialog->exec()) {
-      m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
-      AQString path(dialog->selectedPath());
-      m_currentDoc = new DocInfo(this, path);
-      m_loadedDocs[path] = m_currentDoc;
-
-      m_textEdit->setDocument(m_currentDoc->doc, m_currentDoc->cursor);
-      m_textEdit->verticalScrollBar()->setValue(0);
-
-      // FIXME for now insert into project tree - once we have files tab place it there instead
-      AQListItem *sourceItem= new AQListItem(m_projectView);
-      sourceItem->setText(0, path);
-      sourceItem->setText(1, path);
-      m_projectView->addTopLevelItem(sourceItem);
+      openFile(dialog->selectedPath());
    }
    delete dialog;
+}
+
+void DevStudio::openFile(const AQString &path)
+{
+   m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
+
+   if (m_loadedDocs.find(path) == m_loadedDocs.end()) {
+      m_currentDoc = new DocInfo(this, path);
+      m_loadedDocs[path] = m_currentDoc;
+   } else {
+      if (m_currentDoc == m_loadedDocs[path])
+         return; // already current
+      m_currentDoc = m_loadedDocs[path];
+   }
+
+   m_textEdit->setDocument(m_currentDoc->doc, m_currentDoc->cursor);
+   m_textEdit->verticalScrollBar()->setValue(m_currentDoc->offset.y);
+   m_textEdit->setFocus();
+   onCursorPositionChanged(m_currentDoc->doc);
+
+   //FIXME for now add to list - change when we have a tabbar
+   for (int i = 0; i < m_project->filesCount(); ++i) {
+      if (m_project->projectPath() + "/" + m_project->filename(i) == path)
+         return;
+   }
+
+   AQListItem *sourceItem= new AQListItem(m_projectView);
+   sourceItem->setText(0, path);
+   sourceItem->setText(1, path);
+   m_projectView->addTopLevelItem(sourceItem);
+}
+
+void DevStudio::gotoLine(int n)
+{
+   if (!m_currentDoc)
+      return;
+
+   m_currentDoc->cursor->setPosition(
+                  m_currentDoc->doc->findBlockByLineNumber(n).m_pos);
+   onCursorPositionChanged(m_currentDoc->doc);
+   m_textEdit->setFocus();
+   m_textEdit->ensureCursorVisible();
 }
 
 void DevStudio::saveFile()
@@ -310,14 +359,14 @@ void DevStudio::saveAll()
    }
 }
 
-void DevStudio::run()
+void DevStudio::onRun()
 {
    m_incompleteAddedOutput = nullptr;
    m_outputView->clear();
    m_project->run();
 }
 
-void DevStudio::buildProject()
+void DevStudio::onBuildProject()
 {
    saveAll();
    m_incompleteAddedOutput = nullptr;
@@ -380,4 +429,48 @@ void DevStudio::onCursorPositionChanged(AQObject *obj)
       }
       it++;
    }
+}
+
+void DevStudio::onOutputItemActivated(AQObject *obj)
+{
+   AQListItem *item = (AQListItem *)(obj);
+   AQString text(item->text(0));
+
+   int i = text.indexOf(":");
+
+   if (i > 0) {
+      AQString filename = text.left(i);
+      bool ok;
+      int linenumber = text.mid(i+1).toInt(&ok);
+      if (ok && !filename.isEmpty()) {
+         openFile(m_project->projectPath() + "/" + filename);
+         gotoLine(linenumber-1);
+         return;
+      }
+   }
+   m_textEdit->setFocus();
+}
+
+void DevStudio::onPrevMessage()
+{
+   AQListItem *item;
+   if (m_outputView->selectedItems().size() == 0)
+      item = m_outputView->rootItem()->child(0);
+   else
+      item = m_outputView->itemAbove(m_outputView->selectedItems()[0]);
+
+   if (item)
+      m_outputView->selectItem(item);
+}
+
+void DevStudio::onNextMessage()
+{
+   AQListItem *item;
+   if (m_outputView->selectedItems().size() == 0)
+      item = m_outputView->rootItem()->child(0);
+   else
+      item = m_outputView->itemBelow(m_outputView->selectedItems()[0]);
+
+   if (item)
+      m_outputView->selectItem(item);
 }

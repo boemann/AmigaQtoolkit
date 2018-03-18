@@ -8,5 +8,6 @@ failat 121
 echo "====== building [configuration] in [projfolder] ======" >pipe:adsbuild
 cd [projfolder]
 sh -c "make [configuration] >pipe:adsbuild 2>&1"
-echo  >pipe:adsbuild
+
+; line below is important to write exactly this string !!!
 echo "====== build completed ======" >pipe:adsbuild

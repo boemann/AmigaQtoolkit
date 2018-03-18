@@ -22,20 +22,26 @@ public:
 
 
    void openProject();
-   void openProject(const AQString &projectPath);
    void newFile();
    void openFile();
    void saveFileAs();
    void saveFile();
    void saveAll();
-   void buildProject();
-   void run();
+   void onBuildProject();
+   void onRun();
    void onFileItemDoubleClicked(AQObject *obj);
    void onDocModificationChanged(AQObject *obj);
    void onCursorPositionChanged(AQObject *obj);
+   void onOutputItemActivated(AQObject *obj);
    void onReadFinished();
+   void onPrevMessage();
+   void onNextMessage();
 
 private:
+   void openProject(const AQString &projectPath);
+   void openFile(const AQString &path);
+   void gotoLine(int n);
+
    AQTextEdit *m_textEdit;
    AQListView *m_projectView;
    AQListView *m_outputView;

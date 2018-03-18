@@ -56,7 +56,10 @@ public:
    ~AQListView();
    
    void setTreeMode(bool on);
+   bool treeMode() const;
+
    void setWordWrap(bool on);
+   bool wordWrap() const;
 
    void addTopLevelItem(AQListItem *item);
 
@@ -86,8 +89,9 @@ protected:
    virtual void resizeEvent(const AQPoint &oldSize);
 
 private:
+   int countHeight(RastPort *rp, int &x, AQListItem *parent) const;
    void paintChildren(RastPort *rp, int &x, int &, AQListItem *parent);
-   AQListItem *itemAtRecurse(const AQListItem *root, int h, int &x, int &y, int searchY);
+   AQListItem *itemAtRecurse(const AQListItem *root, int &x, int &y, int searchY);
 
    AQScrollBar *m_scrollBar;
    AQListItem *m_rootItem;

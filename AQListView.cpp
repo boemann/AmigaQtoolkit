@@ -43,6 +43,9 @@ void AQListItem::setText(int column, const AQString &string)
 
    m_text[column] = string;
 
+   if (m_listView && m_listView->wordWrap())
+      m_listView->updateScrollBar();
+
 //   if (m_listView)
 //      m_listView->emit("dataChanged", this);
 }
@@ -170,9 +173,19 @@ void AQListView::setTreeMode(bool on)
    m_treeMode = on;
 }
 
+bool AQListView::treeMode() const
+{
+   return m_treeMode;
+}
+
 void AQListView::setWordWrap(bool on)
 {
    m_wordWrap = on;
+}
+
+bool AQListView::wordWrap() const
+{
+   return m_wordWrap;
 }
 
 void AQListView::addTopLevelItem(AQListItem *item)
@@ -180,18 +193,45 @@ void AQListView::addTopLevelItem(AQListItem *item)
    m_rootItem->addChild(item);
 }
 
-AQListItem *AQListView::itemAtRecurse(const AQListItem *root, int h, int &x, int &y, int searchY)
+AQListItem *AQListView::itemAtRecurse(const AQListItem *root, int &x, int &y, int searchY)
 {
+      RastPort rp;
+      InitRastPort(&rp);
    for (int i = 0; i < root->childCount(); i++) {
-      AQListItem *c = root->child(i);
-      y += h;
-      if (searchY < y)
-         return c;
-      if (m_treeMode && c->isExpanded())
-          if((c = itemAtRecurse(c, h, x, y, searchY))) {
-             x += m_expanderWidth;
-             return c;
+      AQListItem *item = root->child(i);
+
+      if (m_treeMode)
+         x += m_expanderWidth;
+
+      int len = item->text(0).size();
+      int availLen = len;
+
+      if (m_wordWrap) {
+         availLen = (size().x - m_scrollBar->size().x - IconWidth - x - 4) /
+                    rp.TxWidth;
+      }
+
+      char *str = item->text(0);
+      do {
+         len -= availLen;
+         str += availLen;
+         y += fontHeight() + 2;
+      } while (len>0);
+
+
+      if (searchY < y) {
+         if (m_treeMode)
+            x -= m_expanderWidth;
+
+         return item;
+      }
+
+      if (m_treeMode) {
+          if(item->isExpanded() && (item = itemAtRecurse(item, x, y, searchY))) {
+             return item;
           }
+          x -= m_expanderWidth;
+      }
    }
 
    return nullptr;
@@ -204,10 +244,9 @@ AQListItem *AQListView::rootItem()
 
 AQListItem *AQListView::itemAt(const AQPoint &point)
 {
-   int h = fontHeight() + 1;
    int x = 0;
    int y = 0;
-   return itemAtRecurse(m_rootItem, h, x, y, point.y);
+   return itemAtRecurse(m_rootItem, x, y, point.y);
 }
 
 AQListItem *AQListView::itemAbove(const AQListItem *item) const
@@ -285,7 +324,13 @@ void AQListView::scrollUpdate(int v)
 
 void AQListView::updateScrollBar()
 {
-   m_scrollBar->setMaximum(m_rootItem->visibleCount());
+   if (m_wordWrap) {
+      int x=0;
+      RastPort rp;
+      InitRastPort(&rp);
+      m_scrollBar->setMaximum(countHeight(&rp, x, m_rootItem));
+   } else
+      m_scrollBar->setMaximum(m_rootItem->visibleCount());
 }
 
 void AQListView::clear()
@@ -295,6 +340,40 @@ void AQListView::clear()
    m_rootItem = new AQListItem(this);
    m_rootItem->setExpanded(true);
    update();
+}
+
+int AQListView::countHeight(RastPort *rp, int &x, AQListItem *parent) const
+{
+   int lines;
+   for (int i = 0; i < parent->childCount(); ++i) {
+      AQListItem *item = parent->child(i);
+
+      int len = item->text(0).size();
+
+      if (m_treeMode)
+         x += m_expanderWidth;
+
+      int availLen = len;
+      if (m_wordWrap)
+         availLen = (size().x - m_scrollBar->size().x - IconWidth - x - 4)
+                     / rp->TxWidth;
+
+      char *str = item->text(0);
+      do {
+         len -= availLen;
+         str += availLen;
+         ++lines;
+      } while (len>0);
+
+      if (m_treeMode) {
+         if (item->childCount() && item->isExpanded()) {
+            lines += countHeight(rp, x, item);
+         }
+
+         x -= m_expanderWidth;
+      }
+   }
+   return lines;
 }
 
 void AQListView::paintChildren(RastPort *rp, int &x, int &y, AQListItem *parent)
@@ -338,7 +417,7 @@ void AQListView::paintChildren(RastPort *rp, int &x, int &y, AQListItem *parent)
          Text(rp, str, aqMin(availLen, len));
          len -= availLen;
          str += availLen;
-         y += rp->TxHeight + 2;
+         y += fontHeight() + 2;
       } while (len>0);
 
       if (m_treeMode) {
@@ -481,12 +560,11 @@ bool AQListView::mouseDoubleClickEvent(const IntuiMessage &msg)
 {
    AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
 
-   int h = fontHeight() + 2;
    int x = 0;
    int y = 0;
 
-   clickPoint.y += m_scrollBar->value() * h;
-   AQListItem *item = itemAtRecurse(m_rootItem, h, x, y, clickPoint.y);
+   clickPoint.y += m_scrollBar->value() * (fontHeight() + 2);
+   AQListItem *item = itemAtRecurse(m_rootItem, x, y, clickPoint.y);
 
    if (item) {
       if (!m_treeMode || clickPoint.x >= x + m_expanderWidth) {
@@ -503,12 +581,11 @@ bool AQListView::mousePressEvent(const IntuiMessage &msg)
 
    AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
 
-   int h = fontHeight() + 2;
    int x = 0;
    int y = 0;
 
-   clickPoint.y += m_scrollBar->value() * h;
-   AQListItem *item = itemAtRecurse(m_rootItem, h, x, y, clickPoint.y);
+   clickPoint.y += m_scrollBar->value() * (fontHeight() + 2);
+   AQListItem *item = itemAtRecurse(m_rootItem, x, y, clickPoint.y);
 
    if (item) {
       if (m_treeMode && clickPoint.x < x + m_expanderWidth) {
