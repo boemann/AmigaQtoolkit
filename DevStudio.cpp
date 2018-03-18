@@ -39,6 +39,7 @@ DevStudio::DevStudio()
    : AQMainWindow()
    , m_project(nullptr)
    , m_incompleteAddedOutput(nullptr)
+   , m_pipeFh(nullptr)
 {
    setExpanding(true, true);
    setMinimumSize(AQPoint(60, 40));
@@ -124,11 +125,7 @@ DevStudio::DevStudio()
    openProject("Work:devel/AQ");
 
    Connect<DevStudio>(aqApp, "readFinished", this, &DevStudio::onReadFinished);
-   m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
-   if (m_pipeFh != -1) {
-      m_pipeBuffer = new char[600];
-      aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
-   }
+   m_pipeBuffer = new char[600];
 
    AQMenu *menubar = new AQMenu();
    menubar->setMenubarMode(true);
@@ -163,6 +160,9 @@ DevStudio::DevStudio()
 
 void DevStudio::onReadFinished()
 {
+   Close(m_pipeFh);
+   m_pipeFh = nullptr;
+
    int i = 0;
    int start = 0;
    while (m_pipeBuffer[i] != 0) {
@@ -176,24 +176,25 @@ void DevStudio::onReadFinished()
          text = outputItem->text(0);
       } else {
          outputItem = new AQListItem(m_outputView);
-         text = AQString(m_pipeBuffer + start, i-start);
          m_outputView->addTopLevelItem(outputItem);
       }
+      text += AQString(m_pipeBuffer + start, i-start);
       outputItem->setText(0, text);
 
       if (m_pipeBuffer[i] == '\n') {
          m_incompleteAddedOutput = nullptr;
          ++i;
-         start = i;
       } else {
          m_incompleteAddedOutput = outputItem;
       }
+      start = i;
 
-      if (text.endsWith("stopasyncpipe"))
+      if (text.contains("====== build completed ======")) {
+         m_outputView->update();
          return;
+      }
    }
 
-   Close(m_pipeFh);
    m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
    aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
    m_outputView->update();
@@ -203,7 +204,8 @@ DevStudio::~DevStudio()
 {
    delete m_project;
 
-   Close(m_pipeFh);
+   if (m_pipeFh)
+      Close(m_pipeFh);
 }
 
 void DevStudio::openProject()
@@ -320,6 +322,10 @@ void DevStudio::buildProject()
    saveAll();
    m_incompleteAddedOutput = nullptr;
    m_outputView->clear();
+
+   m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
+   aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
+
    m_project->build();
 }
 

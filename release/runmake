@@ -4,7 +4,9 @@
 path >NIL: RAM: C: SYS:Utilities SYS:Rexxc  SYS:System S: SYS:Prefs SYS:WBStartup SYS:Tools SYS:Tools/Commodities
 cd Work:Apps/ADE
 execute ADE-startup
+failat 121
 echo "====== building [configuration] in [projfolder] ======" >pipe:adsbuild
 cd [projfolder]
 sh -c "make [configuration] >pipe:adsbuild 2>&1"
+echo  >pipe:adsbuild
 echo "====== build completed ======" >pipe:adsbuild

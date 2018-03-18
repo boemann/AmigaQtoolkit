@@ -189,7 +189,6 @@ void AQApplication::startAsyncRead(BPTR file, char *buffer, int size)
          packet->dp_Arg1 = fh->fh_Arg1;
          packet->dp_Arg2 = (LONG)buffer;
          packet->dp_Arg3 = (LONG)size;
-
          PutMsg (fh->fh_Type,packet->dp_Link);
       }
    }
@@ -211,11 +210,7 @@ void AQApplication::processEvents(bool &stayAlive)
 
    while (stayAlive & !m_closing) {
       ULONG sigs = Wait (sigFlag);
-      /* NOTE:  If you use GadTools gadgets, you must use GT_GetIMsg()
-       * and GT_ReplyIMsg() instead of GetMsg() and ReplyMsg().
-       * Regular GetMsg() and ReplyMsg() are safe if the only part
-       * of GadTools you use are menus...
-       */
+
       while (stayAlive && (!m_closing) && (imsg = (IntuiMessage *)GetMsg(m_userPort))) {
          IntuiMessage imsgCopy = *imsg;
          ReplyMsg((Message *)imsg);
@@ -314,9 +309,9 @@ AQWidget *AQApplication::hoveredWidget() const
 
 void AQApplication::exit(int cod)
 {
-  while (m_windows.size()) {
-     m_windows[0]->hide();
-  }
+   while (m_windows.size()) {
+      m_windows[0]->hide();
+   }
 
    m_closing = true;
 }
