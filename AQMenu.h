@@ -36,6 +36,8 @@ protected:
 
 private:
    void updateSize();
+   void sendFakeMouseMove(bool holdBehaviour);
+   void effectuate();
 
    vector<int> m_entryType;
    vector<AQMenu *> m_entryMenu;

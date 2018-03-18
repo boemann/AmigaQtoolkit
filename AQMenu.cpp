@@ -2,7 +2,7 @@
 
 #include <graphics/gfxmacros.h>
 #include <graphics/gfxbase.h>
-#include <libraries/gadtools.h>
+#include <intuition/intuitionbase.h>
 
 #include <proto/graphics.h>
 
@@ -11,6 +11,8 @@
 #include <AQAction.h>
 
 #include <stdio.h>
+
+extern struct IntuitionBase *IntuitionBase;
 
 const int SeparatorType = 0;
 const int ActionType = 1;
@@ -46,22 +48,26 @@ void AQMenu::exec(const AQPoint &pos)
 {
    updateSize();
 
-   m_firstUpReceived = true;
    setPos(pos);
+   m_hoveredItem -1;
    show();
+   sendFakeMouseMove(true); // change to false for non-hold-behaviour
+
    grabMouse();
    m_execed = true;
    aqApp->processEvents(m_execed);
    releaseMouse();
+   effectuate();
 }
 
 void AQMenu::popup(const AQPoint &pos)
 {
    updateSize();
 
-   m_firstUpReceived = true;
    setPos(pos);
+   m_hoveredItem -1;
    show();
+   sendFakeMouseMove(true); // keep true
 }
 
 void AQMenu::addSeparator()
@@ -239,6 +245,30 @@ void AQMenu::paintEvent(RastPort *rp, const AQRect &rect)
    }
 }
 
+void AQMenu::sendFakeMouseMove(bool holdBehavior)
+{
+   IntuiMessage msg;
+   AQPoint p;
+   p.x = IntuitionBase->MouseX;
+   p.y = IntuitionBase->MouseY;
+   p = mapFromGlobal(p);
+   msg.MouseX = p.x;
+   msg.MouseY = p.y;
+   mouseMoveEvent(msg);
+
+   m_firstUpReceived = holdBehavior;
+}
+
+void AQMenu::effectuate()
+{
+   if (m_hoveredItem != -1) {
+      if (m_entryType[m_hoveredItem] == MenuType)
+         m_entryMenu[m_hoveredItem]->effectuate();
+      else if (m_entryType[m_hoveredItem] == ActionType)
+         m_entryAction[m_hoveredItem]->trigger();
+   }
+}
+
 bool AQMenu::mousePressEvent(const IntuiMessage &msg)
 {
    return true;
@@ -340,10 +370,7 @@ bool AQMenu::mouseReleaseEvent(const IntuiMessage &msg)
       hide();
       m_execed = false;
       update();
-      if (m_hoveredItem != -1 && m_entryType[m_hoveredItem] == ActionType)
-         m_entryAction[m_hoveredItem]->trigger();
    }
-   m_firstUpReceived = true;
    return true;
 }
 
