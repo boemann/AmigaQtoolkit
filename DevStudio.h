@@ -36,10 +36,14 @@ public:
    void onReadFinished();
    void onPrevMessage();
    void onNextMessage();
+   void onUndoRedoActionTextsChanged();
+   void onUndo();
+   void onRedo();
 
 private:
    void openProject(const AQString &projectPath);
    void openFile(const AQString &path);
+   void switchToDocument(DocInfo *newCurrent);
    void gotoLine(int n);
 
    AQTextEdit *m_textEdit;
@@ -52,6 +56,9 @@ private:
    DocInfo *m_currentDoc;
    BPTR m_pipeFh;
    char *m_pipeBuffer;
+
+   AQAction *m_undoAction;
+   AQAction *m_redoAction;
 };
    
 #endif

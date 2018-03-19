@@ -1,8 +1,10 @@
 #include <algorithm>
 
 #include <AQTextDoc.h>
+#include <AQCommand.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #include <graphics/gfxbase.h>
 #include <graphics/rastport.h>
@@ -10,13 +12,230 @@
 #include <proto/graphics.h>
 #include <proto/dos.h>
 
+class TextCommandBase : public AQCommand
+{
+public:
+   TextCommandBase()
+   {
+   }
+
+   ~TextCommandBase()
+   {
+   }
+
+   void storeCursorStates(AQTextCursor *curs,
+          const AQTextCursor::State &undone, const AQTextCursor::State &done)
+   {
+      m_undone = undone;
+      m_done = done;
+   }
+
+   void restoreUndoneState(AQTextCursor *curs, AQTextCursor::State &s)
+   {
+      s = m_undone;
+   }
+
+   void restoreDoneState(AQTextCursor *curs, AQTextCursor::State &s)
+   {
+      s = m_done;
+   }
+
+   AQTextCursor::State m_undone;
+   AQTextCursor::State m_done;
+};
+
+class InsertCommand : public TextCommandBase
+{
+public:
+   InsertCommand(AQTextDoc *doc, int pos, int n, char *data)
+      : m_doc(doc)
+      , m_pos(pos)
+      , m_n(n)
+      , m_data(new char[n])
+      , m_mergable(n==1 && *data!= '\n')
+   {
+      for (int i = 0; i < n; ++i)
+         m_data[i] = data[i];
+   }
+
+   InsertCommand(const InsertCommand &other)
+      : m_doc(other.m_doc)
+      , m_pos(other.m_pos)
+      , m_n(other.m_n)
+      , m_data(new char[m_n])
+      , m_mergable(other.m_mergable)
+   {
+      for (int i = 0; i < m_n; ++i)
+         m_data[i] = other.m_data[i];
+   }
+
+   ~InsertCommand()
+   {
+      delete m_data;
+   }
+
+   bool mergeWith(AQCommand *cmd)
+   {
+      InsertCommand *other = dynamic_cast<InsertCommand *>(cmd);
+
+      if (!other)
+         return false;
+
+      if (other->m_doc != m_doc)
+         return false;
+
+      if (!other->m_mergable)
+         return false;
+
+      if (!m_mergable)
+         return false;
+
+      if (other->m_pos != m_pos + m_n)
+         return false;
+
+      char *oldData = m_data;
+      m_data = new char[m_n+1];
+      for (int i = 0; i < m_n; ++i) // copy old
+         m_data[i] = oldData[i];
+      m_data[m_n] = other->m_data[0];
+      delete oldData;
+      m_n++;
+
+      m_done = other->m_done;
+      return true;
+   }
+
+   AQString actionText()
+   {
+      return "typing";
+   }
+
+   void undo()
+   {
+      m_doc->deleteData(m_pos, m_n, false);
+      m_doc->restoreUndoneStateToCursors(this);
+   }
+
+   void redo()
+   {
+      m_doc->pushData(m_pos, m_n, m_data, false);
+      m_doc->restoreDoneStateToCursors(this);
+   }
+
+   AQTextDoc *m_doc;
+   int m_pos;
+   int m_n;
+   char *m_data;
+   bool m_mergable;
+};
+
+class DeleteCommand : public TextCommandBase
+{
+public:
+   DeleteCommand(AQTextDoc *doc, int pos, int n, char *data)
+      : m_doc(doc)
+      , m_pos(pos)
+      , m_n(n)
+      , m_data(new char[n])
+      , m_mergedInsert(nullptr)
+   {
+      for (int i = 0; i <  n; ++i)
+         m_data[i] = data[i];
+   }
+
+   ~DeleteCommand()
+   {
+      delete m_data;
+      delete m_mergedInsert;
+   }
+
+   bool mergeWith(AQCommand *cmd)
+   {
+      InsertCommand *otherInsert = dynamic_cast<InsertCommand *>(cmd);
+
+      if (otherInsert) {
+         if (otherInsert->m_doc != m_doc)
+            return false;
+
+         if (m_undone.pos == m_undone.anchorPos)
+            return false;
+
+         if (m_mergedInsert) {
+            bool ret = m_mergedInsert->mergeWith(otherInsert);
+            if (ret)
+               m_done = m_mergedInsert->m_done;
+            return ret;
+          }
+         if (otherInsert->m_pos != m_pos)
+            return false;
+
+         m_mergedInsert = new InsertCommand(*otherInsert);
+
+         m_done = m_mergedInsert->m_done;
+
+         return true;
+      }
+
+      return false; // no merge of deletes for now
+
+      DeleteCommand *other = dynamic_cast<DeleteCommand *>(cmd);
+
+      if (!other)
+         return false;
+
+      if (other->m_doc != m_doc)
+         return false;
+
+      if (m_undone.pos != m_undone.anchorPos) // was a selection delete
+            return false;
+
+      if (other->m_n > 1)
+         return false;
+
+      if (other->m_pos != m_pos)
+         return false;
+
+      if (other->m_pos != m_pos)
+         return false;
+
+      return true;
+   }
+
+   AQString actionText()
+   {
+      if (m_mergedInsert)
+         return m_mergedInsert->actionText();
+
+      return "delete";
+   }
+
+   void undo()
+   {
+      if (m_mergedInsert)
+         m_mergedInsert->undo();
+
+      m_doc->pushData(m_pos, m_n, m_data, false);
+      m_doc->restoreUndoneStateToCursors(this);
+   }
+
+   void redo()
+   {
+      m_doc->deleteData(m_pos, m_n, false);
+      m_doc->restoreDoneStateToCursors(this);
+
+      if (m_mergedInsert)
+         m_mergedInsert->redo();
+   }
+
+   AQTextDoc *m_doc;
+   int m_pos;
+   int m_n;
+   char *m_data;
+   InsertCommand *m_mergedInsert;
+};
+
 AQTextCursor::AQTextCursor(AQTextDoc &doc)
    : m_doc(doc)
-   , m_pos(0)
-   , m_posInBlock(0)
-   , m_wishX(0)
-   , m_anchorPos(0)
-   , m_anchorInBlock(0)
 {
    m_doc.addCursor(this);
 }
@@ -33,17 +252,7 @@ void AQTextCursor::insertText(const AQString &str)
 
    int addLen = str.size();
 
-   m_doc.pushData(m_pos, addLen);
-   for (int i = 0; i < addLen; i++) {
-      m_doc.m_data[m_pos++] = str[i];
-      m_posInBlock++;
-      if (str[i] == '\n')
-         m_posInBlock = 0;
-   }
-   m_wishX = m_posInBlock;
-   m_anchorInBlock = m_posInBlock;
-   m_anchorPos = m_pos;
-   m_doc.updateBlocks();
+   m_doc.pushData(m_state.pos, addLen, str);
 }
 
 void AQTextCursor::insertBlock()
@@ -51,53 +260,48 @@ void AQTextCursor::insertBlock()
    if (hasSelection())
       deleteSelection();
 
-   m_doc.pushData(m_pos, 1);
-   m_doc.m_data[m_pos] = '\n';
-   ++m_pos;
-   m_wishX = m_posInBlock;
-   m_anchorInBlock = m_posInBlock = 0;
-   m_anchorPos = m_pos;
-   m_doc.updateBlocks();
+   m_doc.pushData(m_state.pos, 1, "\n");
 }  
 
 int AQTextCursor::position() const
 {
-   return m_pos;
+   return m_state.pos;
 }
 
 int AQTextCursor::positionInBlock() const
 {
-   return m_posInBlock;
+   return m_state.posInBlock;
 }
 
 bool AQTextCursor::hasSelection() const
 {
-   return m_pos != m_anchorPos;
+   return m_state.pos != m_state.anchorPos;
 }
 
 int AQTextCursor::selectionStart() const
 {
-   return m_pos < m_anchorPos ? m_pos : m_anchorPos;
+   return m_state.pos < m_state.anchorPos ? m_state.pos : m_state.anchorPos;
 }
 
 int AQTextCursor::selectionEnd() const
 {
-   return m_pos > m_anchorPos ? m_pos : m_anchorPos;
+   return m_state.pos > m_state.anchorPos ? m_state.pos : m_state.anchorPos;
 }
 
 void AQTextCursor::setPosition(int pos, bool keepAnchor)
 {
    if (pos >=0 && pos <= m_doc.m_size) {
-      m_pos = pos;
-      m_posInBlock = 0;
-      while(m_pos - m_posInBlock > 0 && m_doc.m_data[m_pos - m_posInBlock - 1] != '\n')
-         ++m_posInBlock;
+      m_state.pos = pos;
+      m_state.posInBlock = 0;
+      while(m_state.pos - m_state.posInBlock > 0
+              && m_doc.m_data[m_state.pos - m_state.posInBlock - 1] != '\n')
+         ++m_state.posInBlock;
 
-      m_wishX = m_posInBlock;
+      m_state.wishX = m_state.posInBlock;
 
       if (!keepAnchor) {
-         m_anchorPos = m_pos;
-         m_anchorInBlock = m_posInBlock;
+         m_state.anchorPos = m_state.pos;
+         m_state.anchorInBlock = m_state.posInBlock;
       }
       m_doc.emit("cursorPositionChanged", &m_doc);
    }
@@ -107,17 +311,17 @@ void AQTextCursor::select(AQTextCursor::SelectionType type)
 {
    switch(type) {
    default:
-      m_anchorPos=m_pos;
-      m_anchorInBlock = m_posInBlock;
-      while (m_anchorPos && isalnum(m_doc.m_data[m_anchorPos-1])) {
-         --m_anchorPos;
-         --m_anchorInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
+      while (m_state.anchorPos && isalnum(m_doc.m_data[m_state.anchorPos-1])) {
+         --m_state.anchorPos;
+         --m_state.anchorInBlock;
       }
-      while (m_doc.m_data[m_pos] && isalnum(m_doc.m_data[m_pos])) {
-         ++m_pos;
-         ++m_posInBlock;
+      while (m_doc.m_data[m_state.pos] && isalnum(m_doc.m_data[m_state.pos])) {
+         ++m_state.pos;
+         ++m_state.posInBlock;
       }
-      m_wishX = m_posInBlock;
+      m_state.wishX = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
@@ -137,11 +341,9 @@ void AQTextCursor::deleteLeft()
       return;
    }
 
-   if (m_pos) {
-      movePrevChar(false);
-      m_doc.deleteData(m_pos, 1);
-      m_doc.updateBlocks();
-   }
+   if (m_state.pos)
+      m_doc.deleteData(m_state.pos-1, 1);
+
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
@@ -152,212 +354,266 @@ void AQTextCursor::deleteRight()
       return;
    }
 
-   if (m_doc.m_size > m_pos) {
-      m_doc.deleteData(m_pos, 1);
-      m_doc.updateBlocks();
-      m_wishX = m_posInBlock;
-   }
+   if (m_doc.m_size > m_state.pos)
+      m_doc.deleteData(m_state.pos, 1);
+
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::deleteSelection()
 {
    int n;
-   if (m_pos > m_anchorPos) {
-      n = m_pos - m_anchorPos;
-      m_pos = m_anchorPos;
-      m_posInBlock = m_anchorInBlock;
+   int pos;
+   if (m_state.pos > m_state.anchorPos) {
+      n = m_state.pos - m_state.anchorPos;
+      pos = m_state.anchorPos;
    } else {
-      n = m_anchorPos - m_pos;
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      n = m_state.anchorPos - m_state.pos;
+      pos = m_state.pos;
    }
    if (n == 0)
       return;
-   m_doc.deleteData(m_pos, n);
-   m_doc.updateBlocks();
-   m_wishX = m_posInBlock;
+   m_doc.deleteData(pos, n);
+
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::moveNextChar(bool keepAnchor)
 {
-   if (m_doc.m_size > m_pos) {
-      if (m_doc.m_data[m_pos] == '\n')
-         m_posInBlock = 0;
+   if (m_doc.m_size > m_state.pos) {
+      if (m_doc.m_data[m_state.pos] == '\n')
+         m_state.posInBlock = 0;
       else
-         ++m_posInBlock;
-      ++m_pos;
+         ++m_state.posInBlock;
+      ++m_state.pos;
    }
-   m_wishX = m_posInBlock;
+   m_state.wishX = m_state.posInBlock;
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::movePrevChar(bool keepAnchor)
 {
-   if (m_pos) {
-      --m_pos;
-      if (m_posInBlock == 0) {
-         char *cptr = m_doc.m_data + m_pos - 1;
+   if (m_state.pos) {
+      --m_state.pos;
+      if (m_state.posInBlock == 0) {
+         char *cptr = m_doc.m_data + m_state.pos - 1;
          while (cptr >= m_doc.m_data && *cptr != '\n')
             --cptr;
          ++cptr;
-         m_posInBlock = m_doc.m_data + m_pos - cptr;
+         m_state.posInBlock = m_doc.m_data + m_state.pos - cptr;
       } else
-         --m_posInBlock;
+         --m_state.posInBlock;
    }
-   m_wishX = m_posInBlock;
+   m_state.wishX = m_state.posInBlock;
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::moveNextLine(bool keepAnchor)
 {
-   int block = m_doc.blockNumber(m_pos);
+   int block = m_doc.blockNumber(m_state.pos);
 
    if (block < m_doc.m_numBlocks - 1) {
-      m_pos = m_doc.m_blocks[block+1].m_pos;
-      m_posInBlock = 0;
-      while (m_doc.m_size > m_pos) {
-         if (m_doc.m_data[m_pos] == '\n')
+      m_state.pos = m_doc.m_blocks[block+1].m_pos;
+      m_state.posInBlock = 0;
+      while (m_doc.m_size > m_state.pos) {
+         if (m_doc.m_data[m_state.pos] == '\n')
             break;
-         if (m_posInBlock == m_wishX)
+         if (m_state.posInBlock == m_state.wishX)
             break;
-         ++m_pos;
-         ++m_posInBlock;
+         ++m_state.pos;
+         ++m_state.posInBlock;
       }
    }
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::movePrevLine(bool keepAnchor)
 {
-   int block = m_doc.blockNumber(m_pos);
+   int block = m_doc.blockNumber(m_state.pos);
 
    if (block > 0 ) {
-      m_pos = m_doc.m_blocks[block-1].m_pos;
-      m_posInBlock = 0;
-      while (m_doc.m_size > m_pos) {
-         if (m_doc.m_data[m_pos] == '\n')
+      m_state.pos = m_doc.m_blocks[block-1].m_pos;
+      m_state.posInBlock = 0;
+      while (m_doc.m_size > m_state.pos) {
+         if (m_doc.m_data[m_state.pos] == '\n')
             break;
-         if (m_posInBlock == m_wishX)
+         if (m_state.posInBlock == m_state.wishX)
             break;
-         ++m_pos;
-         ++m_posInBlock;
+         ++m_state.pos;
+         ++m_state.posInBlock;
       }
    }
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::moveStartOfLine(bool keepAnchor)
 {
-   int block = m_doc.blockNumber(m_pos);
+   int block = m_doc.blockNumber(m_state.pos);
 
-   m_pos = m_doc.m_blocks[block].m_pos;
-   m_posInBlock = 0;
-   m_wishX = m_posInBlock;
+   m_state.pos = m_doc.m_blocks[block].m_pos;
+   m_state.posInBlock = 0;
+   m_state.wishX = m_state.posInBlock;
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::moveEndOfLine(bool keepAnchor)
 {
-   int block = m_doc.blockNumber(m_pos);
+   int block = m_doc.blockNumber(m_state.pos);
 
-   m_pos = m_doc.m_blocks[block+1].m_pos - 1;
-   m_posInBlock = m_doc.m_blocks[block+1].m_pos - m_doc.m_blocks[block].m_pos - 1;
-   m_wishX = m_posInBlock;
+   m_state.pos = m_doc.m_blocks[block+1].m_pos - 1;
+   m_state.posInBlock = m_doc.m_blocks[block+1].m_pos - m_doc.m_blocks[block].m_pos - 1;
+   m_state.wishX = m_state.posInBlock;
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::movePageUp(int visibleCount, bool keepAnchor)
 {
-   int block = m_doc.blockNumber(m_pos);
+   int block = m_doc.blockNumber(m_state.pos);
 
    if (block > 0 ) {
       block -= visibleCount;
       if (block < 0)
          block = 0;
-      m_pos = m_doc.m_blocks[block].m_pos;
-      m_posInBlock = 0;
-      while (m_doc.m_size > m_pos) {
-         if (m_doc.m_data[m_pos] == '\n')
+      m_state.pos = m_doc.m_blocks[block].m_pos;
+      m_state.posInBlock = 0;
+      while (m_doc.m_size > m_state.pos) {
+         if (m_doc.m_data[m_state.pos] == '\n')
             break;
-         if (m_posInBlock == m_wishX)
+         if (m_state.posInBlock == m_state.wishX)
             break;
-         ++m_pos;
-         ++m_posInBlock;
+         ++m_state.pos;
+         ++m_state.posInBlock;
       }
    }
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::movePageDown(int visibleCount, bool keepAnchor)
 {
-   int block = m_doc.blockNumber(m_pos);
+   int block = m_doc.blockNumber(m_state.pos);
 
    if (block < m_doc.m_numBlocks - 1) {
       block += visibleCount;
       if (block >= m_doc.m_numBlocks - 1)
          block = m_doc.m_numBlocks - 1;
-      m_pos = m_doc.m_blocks[block].m_pos;
-      m_posInBlock = 0;
-      while (m_doc.m_size > m_pos) {
-         if (m_doc.m_data[m_pos] == '\n')
+      m_state.pos = m_doc.m_blocks[block].m_pos;
+      m_state.posInBlock = 0;
+      while (m_doc.m_size > m_state.pos) {
+         if (m_doc.m_data[m_state.pos] == '\n')
             break;
-         if (m_posInBlock == m_wishX)
+         if (m_state.posInBlock == m_state.wishX)
             break;
-         ++m_pos;
-         ++m_posInBlock;
+         ++m_state.pos;
+         ++m_state.posInBlock;
       }
    }
 
    if (!keepAnchor) {
-      m_anchorPos = m_pos;
-      m_anchorInBlock = m_posInBlock;
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
-void AQTextCursor::dataPushed(int pos, int n)
+void AQTextCursor::dataPushed(int pos, int n, TextCommandBase *cmd)
 {
+   State undone = m_state; 
+
+   if (pos <= m_state.pos) {
+      m_state.pos += n;
+
+      char *cptr = m_doc.m_data + m_state.pos - 1;
+      while (cptr >= m_doc.m_data && *cptr != '\n')
+         --cptr;
+      ++cptr;
+      m_state.posInBlock = m_doc.m_data + m_state.pos - cptr;
+   }
+   if (pos <= m_state.anchorPos) {
+      m_state.anchorPos += n;
+
+      char *cptr = m_doc.m_data + m_state.anchorPos - 1;
+      while (cptr >= m_doc.m_data && *cptr != '\n')
+         --cptr;
+      ++cptr;
+      m_state.anchorInBlock = m_doc.m_data + m_state.anchorPos - cptr;
+   }
+   m_state.wishX = m_state.posInBlock;
+
+   cmd->storeCursorStates(this, undone, m_state);
 }
 
-void AQTextCursor::dataDeleted(int pos, int n)
+void AQTextCursor::dataDeleted(int pos, int n, TextCommandBase *cmd)
 {
+   State undone = m_state;
+
+   if (pos < m_state.pos) {
+      int move = aqMin(n, m_state.pos - pos);
+      m_state.pos -= move;
+
+      char *cptr = m_doc.m_data + m_state.pos - 1;
+      while (cptr >= m_doc.m_data && *cptr != '\n')
+         --cptr;
+      ++cptr;
+      m_state.posInBlock = m_doc.m_data + m_state.pos - cptr;
+   }
+   if (pos < m_state.anchorPos) {
+      int move = aqMin(n, m_state.anchorPos - pos);
+      m_state.anchorPos -= move;
+
+      char *cptr = m_doc.m_data + m_state.anchorPos - 1;
+      while (cptr >= m_doc.m_data && *cptr != '\n')
+         --cptr;
+      ++cptr;
+      m_state.anchorInBlock = m_doc.m_data + m_state.anchorPos - cptr;
+   }
+   m_state.wishX = m_state.posInBlock;
+
+   cmd->storeCursorStates(this, undone, m_state);
+}
+
+void AQTextCursor::restoreUndoneState(TextCommandBase *cmd)
+{
+   cmd->restoreUndoneState(this, m_state);
+}
+
+void AQTextCursor::restoreDoneState(TextCommandBase *cmd)
+{
+   cmd->restoreDoneState(this, m_state);
 }
 
 AQTextDoc::AQTextDoc(AQObject *parent)
@@ -365,7 +621,7 @@ AQTextDoc::AQTextDoc(AQObject *parent)
    , m_data(nullptr)
    , m_size(0)
    , m_lineHeight(7)
-   , m_modified(false)
+   , m_latestCommand(nullptr)
 {
    m_capacity = 1000;
    m_data = new char[m_capacity];
@@ -404,8 +660,6 @@ void AQTextDoc::loadFile(const AQString &fileName)
    }
    Close(file);
    updateBlocks();
-
-   setModified(false);
 }
 
 bool AQTextDoc::saveFile(const AQString &fileName) const
@@ -432,8 +686,6 @@ void AQTextDoc::setData(const AQString &text)
       m_data[m_size] = 0; // make sure we are null terminated
    }
    updateBlocks();
-
-   setModified(false);
 }
 
 AQString AQTextDoc::toString() const
@@ -503,19 +755,21 @@ void AQTextDoc::render(RastPort *rp, AQPoint docOffset, AQPoint botRight)
    }
 } 
 
-bool AQTextDoc::isModified() const
+AQCommand *AQTextDoc::takeLatestCommand()
 {
-   return m_modified;
+   AQCommand *retval = m_latestCommand;
+   m_latestCommand = nullptr;
+   return retval;
 }
 
-void AQTextDoc::setModified(bool m)
+void AQTextDoc::setLatestCommand(AQCommand *cmd)
 {
-   if (m_modified == m)
-      return;
+   if (m_latestCommand)
+      delete m_latestCommand;
 
-   m_modified = m;
+   m_latestCommand = cmd;
 
-   emit("modificationChanged", this);
+   emit("commandAvailable", this);
 }
 
 int AQTextDoc::height() const
@@ -559,8 +813,14 @@ AQTextBlock AQTextDoc::findBlockByLineNumber(int line) const
 }
 
 
-void AQTextDoc::pushData(int pos, int n)
+void AQTextDoc::pushData(int pos, int n, char *chars, bool createCommand)
 {
+   InsertCommand *cmd = nullptr;
+
+   if (createCommand) {
+      cmd = new InsertCommand(this, pos, n, chars);
+   }
+
    if (m_capacity > m_size + n + 1)
       for (int i = m_size + n + 1; i > pos; --i) {
          m_data[i] = m_data[i-n];
@@ -578,23 +838,53 @@ void AQTextDoc::pushData(int pos, int n)
    }
    m_size += n;
 
-   for (int i = 0; i < m_cursors.size(); ++i)
-      m_cursors[i]->dataPushed(pos, n);
+   // Actually copy the data
+   for (int i = 0; i < n; i++)
+      m_data[pos + i] = chars[i];
 
-   setModified(true);
+   updateBlocks();
+
+   if (cmd) {
+      for (int i = 0; i < m_cursors.size(); ++i)
+         m_cursors[i]->dataPushed(pos, n, cmd);
+
+      setLatestCommand(cmd);
+   }
 }
 
-void AQTextDoc::deleteData(int pos, int n)
+void AQTextDoc::deleteData(int pos, int n, bool createCommand)
 {
+   DeleteCommand *cmd = nullptr;
+
+   if (createCommand) {
+      cmd = new DeleteCommand(this, pos, n, m_data+pos);
+   }
+
    for (int i = pos; i <  m_size - n + 1; ++i) {
          m_data[i] = m_data[i+n];
    }
    m_size -= n;
 
-   for (int i = 0; i < m_cursors.size(); ++i)
-      m_cursors[i]->dataDeleted(pos, n);
+   updateBlocks();
 
-   setModified(true);
+   if (cmd) {
+      for (int i = 0; i < m_cursors.size(); ++i)
+         m_cursors[i]->dataDeleted(pos, n, cmd);
+
+      setLatestCommand(cmd);
+   }
+}
+
+void AQTextDoc::restoreUndoneStateToCursors(TextCommandBase *cmd)
+{
+   for (int i = 0; i < m_cursors.size(); ++i)
+      m_cursors[i]->restoreUndoneState(cmd);
+}
+
+void AQTextDoc::restoreDoneStateToCursors(TextCommandBase *cmd)
+{
+   for (int i = 0; i < m_cursors.size(); ++i)
+      m_cursors[i]->restoreDoneState(cmd);
 }
 
 void AQTextDoc::addCursor(AQTextCursor *cursor)

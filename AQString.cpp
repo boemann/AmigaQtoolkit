@@ -4,7 +4,6 @@
 
 #include <proto/dos.h>
 
-
 AQString::AQString()
    : m_d(new Private())
 {

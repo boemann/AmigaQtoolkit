@@ -9,6 +9,7 @@
 #include <AQStatusBar.h>
 #include <AQLabel.h>
 #include <AQMenu.h>
+#include <AQCommandStack.h>
 
 #include <proto/dos.h>
 
@@ -24,6 +25,9 @@ struct DocInfo
    AQTextDoc *doc;
    AQTextCursor *cursor;
    AQPoint offset;
+   AQCommandStack *commandStack;
+
+   void onCommandAvailable();
 };
 
 DocInfo::DocInfo(DevStudio *studio, const AQString &path)
@@ -31,8 +35,16 @@ DocInfo::DocInfo(DevStudio *studio, const AQString &path)
    doc = new AQTextDoc(studio);
    doc->loadFile(path);
    cursor = new AQTextCursor(*doc);
-   Connect<DevStudio>(doc, "modificationChanged", studio, &DevStudio::onDocModificationChanged);
+   commandStack = new AQCommandStack();
+   Connect<DocInfo>(doc, "commandAvailable", this, &DocInfo::onCommandAvailable);
    Connect<DevStudio>(doc, "cursorPositionChanged", studio, &DevStudio::onCursorPositionChanged);
+
+   Connect<DevStudio>(commandStack, "actionTextsChanged", studio, &DevStudio::onUndoRedoActionTextsChanged);
+}
+
+void DocInfo::onCommandAvailable()
+{
+   commandStack->push(doc->takeLatestCommand());
 }
 
 DevStudio::DevStudio()
@@ -86,6 +98,18 @@ DevStudio::DevStudio()
    quitAction->setText("Quit");
    Connect<DevStudio>(quitAction, "triggered", this, &DevStudio::closeEvent);
    aqApp->addAction(quitAction);
+
+   m_undoAction = new AQAction(this);
+   m_undoAction->setShortcut("Amiga+Z");
+   m_undoAction->setText("Undo");
+   Connect<DevStudio>(m_undoAction, "triggered", this, &DevStudio::onUndo);
+   aqApp->addAction(m_undoAction);
+
+   m_redoAction = new AQAction(this);
+   m_redoAction->setShortcut("Shift+Amiga+Z");
+   m_redoAction->setText("Undo");
+   Connect<DevStudio>(m_redoAction, "triggered", this, &DevStudio::onRedo);
+   aqApp->addAction(m_redoAction);
 
    AQAction *runAction = new AQAction(this);
    runAction->setShortcut("F5");
@@ -156,6 +180,9 @@ DevStudio::DevStudio()
    menubar->addMenu(projectMenu);
 
    AQMenu *editMenu = new AQMenu("Edit");
+   editMenu->addAction(m_undoAction);
+   editMenu->addAction(m_redoAction);
+   editMenu->addSeparator();
    menubar->addMenu(editMenu);
 
    AQMenu *buildMenu = new AQMenu("Build");
@@ -282,21 +309,14 @@ void DevStudio::openFile()
 
 void DevStudio::openFile(const AQString &path)
 {
-   m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
-
    if (m_loadedDocs.find(path) == m_loadedDocs.end()) {
-      m_currentDoc = new DocInfo(this, path);
-      m_loadedDocs[path] = m_currentDoc;
+      m_loadedDocs[path] = new DocInfo(this, path);
    } else {
       if (m_currentDoc == m_loadedDocs[path])
          return; // already current
-      m_currentDoc = m_loadedDocs[path];
    }
 
-   m_textEdit->setDocument(m_currentDoc->doc, m_currentDoc->cursor);
-   m_textEdit->verticalScrollBar()->setValue(m_currentDoc->offset.y);
-   m_textEdit->setFocus();
-   onCursorPositionChanged(m_currentDoc->doc);
+   switchToDocument(m_loadedDocs[path]);
 
    //FIXME for now add to list - change when we have a tabbar
    for (int i = 0; i < m_project->filesCount(); ++i) {
@@ -327,7 +347,8 @@ void DevStudio::saveFile()
    map<AQString, DocInfo *>::iterator it = m_loadedDocs.begin();
    while (it != m_loadedDocs.end()) {
       if (it->second->doc == m_textEdit->document()) {
-         m_textEdit->document()->saveFile(it->first);
+         it->second->doc->saveFile(it->first);
+         it->second->commandStack->setClean();
          return;
       }
       it++;
@@ -337,12 +358,26 @@ void DevStudio::saveFile()
 
 void DevStudio::saveFileAs()
 {
-   AQDialog dialog(AQDialog::SaveButton | AQDialog::CancelButton
+   AQDialog *dialog = new AQDialog(AQDialog::SaveButton | AQDialog::CancelButton
                   | AQDialog::SelectionName);
-   dialog.setWindowTitle("Save File As");
-   if (dialog.exec()) {
-      m_textEdit->document()->saveFile(dialog.selectedPath());
+   dialog->setWindowTitle("Save File As");
+
+   // Let's figure out what folder to start dialog in
+   map<AQString, DocInfo *>::iterator it = m_loadedDocs.begin();
+   while (it != m_loadedDocs.end()) {
+      if (it->second->doc == m_textEdit->document()) {
+         dialog->setDrawer(qCdUp(it->first));
+         break;
+      }
+      it++;
    }
+   if (it == m_loadedDocs.end())
+      dialog->setDrawer(m_project->projectPath());
+
+   if (dialog->exec()) {
+      m_textEdit->document()->saveFile(dialog->selectedPath());
+   }
+   delete dialog;
 }
 
 void DevStudio::saveAll()
@@ -350,10 +385,10 @@ void DevStudio::saveAll()
    map<AQString, DocInfo *>::iterator it = m_loadedDocs.begin();
    AQString filename;
    while (it != m_loadedDocs.end()) {
-      if (it->second->doc->isModified())
+      if (!it->second->commandStack->isClean())
          it->second->doc->saveFile(it->first);
 
-      it->second->doc->setModified(false);
+      it->second->commandStack->setClean();
 
       it++;
    }
@@ -378,24 +413,28 @@ void DevStudio::onBuildProject()
    m_project->build();
 }
 
+void DevStudio::switchToDocument(DocInfo *newCurrent)
+{
+   m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
+
+   m_currentDoc = newCurrent;
+
+   m_textEdit->setDocument(m_currentDoc->doc, m_currentDoc->cursor);
+   m_textEdit->verticalScrollBar()->setValue(m_currentDoc->offset.y);
+   m_textEdit->setFocus();
+   onCursorPositionChanged(m_currentDoc->doc);
+   onUndoRedoActionTextsChanged();
+}
 
 void DevStudio::onFileItemDoubleClicked(AQObject *obj)
 {
    AQListItem *item = (AQListItem *)(obj);
    AQString path(item->text(1));
 
-   m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
+   if (m_loadedDocs.find(path) == m_loadedDocs.end())
+      m_loadedDocs[path] = new DocInfo(this, path);
 
-   if (m_loadedDocs.find(path) == m_loadedDocs.end()) {
-      m_currentDoc = new DocInfo(this, path);
-      m_loadedDocs[path] = m_currentDoc;
-   } else
-      m_currentDoc = m_loadedDocs[path];
-
-   m_textEdit->setDocument(m_currentDoc->doc, m_currentDoc->cursor);
-   m_textEdit->verticalScrollBar()->setValue(m_currentDoc->offset.y);
-   m_textEdit->setFocus();
-   onCursorPositionChanged(m_currentDoc->doc);
+   switchToDocument(m_loadedDocs[path]);
 }
 
 void DevStudio::onDocModificationChanged(AQObject *obj)
@@ -473,4 +512,36 @@ void DevStudio::onNextMessage()
 
    if (item)
       m_outputView->selectItem(item);
+}
+
+void DevStudio::onUndoRedoActionTextsChanged()
+{
+   if (!m_currentDoc)
+      return;
+
+   m_undoAction->setText(m_currentDoc->commandStack->undoText());
+   m_undoAction->setEnabled(m_currentDoc->commandStack->canUndo());
+
+   m_redoAction->setText(m_currentDoc->commandStack->redoText());
+   m_redoAction->setEnabled(m_currentDoc->commandStack->canRedo());
+}
+
+void DevStudio::onUndo()
+{
+   if (!m_currentDoc)
+      return;
+
+   m_currentDoc->commandStack->undo();
+   m_textEdit->update();
+   m_textEdit->ensureCursorVisible();
+}
+
+void DevStudio::onRedo()
+{
+   if (!m_currentDoc)
+      return;
+
+   m_currentDoc->commandStack->redo();
+   m_textEdit->update();
+   m_textEdit->ensureCursorVisible();
 }

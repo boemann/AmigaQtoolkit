@@ -1,5 +1,5 @@
 #ifndef AQTEXTDOC_H
-#define AQTEXTDOC
+#define AQTEXTDOC_H
 
 #include <vector.h>
 
@@ -8,7 +8,10 @@
 #include <AQString.h>
 
 class AQTextDoc;
+class AQCommand;
+
 struct RastPort;
+class TextCommandBase;
 
 class AQTextCursor
 {
@@ -50,14 +53,21 @@ public:
    friend class AQTextDoc;
 
 private:
-   void dataPushed(int pos, int n);
-   void dataDeleted(int pos, int n);
+   struct State
+   {
+      State() : pos(), posInBlock(0), wishX(0), anchorPos(0), anchorInBlock(0){}
+      int pos;
+      int posInBlock;
+      int wishX;
+      int anchorPos;
+      int anchorInBlock;
+   } m_state;
 
-   int m_pos;
-   int m_posInBlock;
-   int m_wishX;
-   int m_anchorPos;
-   int m_anchorInBlock;
+   void dataPushed(int pos, int n, TextCommandBase *cmd);
+   void dataDeleted(int pos, int n, TextCommandBase *cmd);
+   void restoreUndoneState(TextCommandBase *cmd);
+   void restoreDoneState(TextCommandBase *cmd);
+
    AQTextDoc &m_doc;
 };
 
@@ -79,8 +89,10 @@ public:
 
    bool saveFile(const AQString &filename) const;
 
-   bool isModified() const;
-   void setModified(bool m = true);
+
+   // Command representing latest change - if you take it you own it
+   // Listen to commandAvailable signal for notisfication
+   AQCommand *takeLatestCommand();
 
    int height() const;
    int lineHeight() const;
@@ -92,13 +104,19 @@ public:
    int positionOfPoint(const AQPoint &p) const;
 
    friend class AQTextCursor;
+   friend class DeleteCommand;
+   friend class InsertCommand;
 
 private:
+   void restoreUndoneStateToCursors(TextCommandBase *cmd);
+   void restoreDoneStateToCursors(TextCommandBase *cmd);
    void addCursor(AQTextCursor *cursor);
    void removeCursor(AQTextCursor *cursor);
 
-   void pushData(int pos, int n);
-   void deleteData(int pos, int n);
+   void setLatestCommand(AQCommand *cmd);
+
+   void pushData(int pos, int n, char *chars, bool createCommand = true);
+   void deleteData(int pos, int n, bool createCommand = true);
    void updateBlocks();
 
    AQTextBlock m_blocks[5000];
@@ -110,7 +128,7 @@ private:
    vector<AQTextCursor *>m_cursors;
    int m_lineHeight;
    int m_charWidth;
-   bool m_modified;
+   AQCommand *m_latestCommand;
 };
 
 #endif

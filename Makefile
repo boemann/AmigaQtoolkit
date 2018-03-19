@@ -9,6 +9,7 @@ LIBS=-lstdc++
 
 SRCS = AQApplication.cpp \
        AQClipboard.cpp \
+       AQCommandStack.cpp \
        AQAction.cpp \
        AQString.cpp \
        AQWidget.cpp \
@@ -35,6 +36,8 @@ HDRS = AQApplication.h \
        AQKernel.h \
        AQObject.h \
        AQClipboard.h \
+       AQCommand.h \
+       AQCommandStack.h \
        AQAction.h \
        AQString.h \
        AQWidget.h \
