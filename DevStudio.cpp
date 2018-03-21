@@ -111,6 +111,24 @@ DevStudio::DevStudio()
    Connect<DevStudio>(m_redoAction, "triggered", this, &DevStudio::onRedo);
    aqApp->addAction(m_redoAction);
 
+   m_cutAction = new AQAction(this);
+   m_cutAction->setShortcut("Amiga+X");
+   m_cutAction->setText("Cut");
+   Connect<DevStudio>(m_cutAction, "triggered", this, &DevStudio::onCut);
+   aqApp->addAction(m_cutAction);
+
+   m_copyAction = new AQAction(this);
+   m_copyAction->setShortcut("Amiga+C");
+   m_copyAction->setText("Cut");
+   Connect<DevStudio>(m_copyAction, "triggered", this, &DevStudio::onCopy);
+   aqApp->addAction(m_copyAction);
+
+   m_pasteAction = new AQAction(this);
+   m_pasteAction->setShortcut("Amiga+V");
+   m_pasteAction->setText("Paste");
+   Connect<DevStudio>(m_pasteAction, "triggered", this, &DevStudio::onPaste);
+   aqApp->addAction(m_pasteAction);
+
    AQAction *runAction = new AQAction(this);
    runAction->setShortcut("F5");
    runAction->setText("Run Debug");
@@ -183,6 +201,9 @@ DevStudio::DevStudio()
    editMenu->addAction(m_undoAction);
    editMenu->addAction(m_redoAction);
    editMenu->addSeparator();
+   editMenu->addAction(m_cutAction);
+   editMenu->addAction(m_copyAction);
+   editMenu->addAction(m_pasteAction);
    menubar->addMenu(editMenu);
 
    AQMenu *buildMenu = new AQMenu("Build");
@@ -545,3 +566,28 @@ void DevStudio::onRedo()
    m_textEdit->update();
    m_textEdit->ensureCursorVisible();
 }
+
+void DevStudio::onCut()
+{
+   if (!m_currentDoc)
+      return;
+
+   m_textEdit->cut();
+}
+
+void DevStudio::onCopy()
+{
+   if (!m_currentDoc)
+      return;
+
+   m_textEdit->copy();
+}
+
+void DevStudio::onPaste()
+{
+   if (!m_currentDoc)
+      return;
+
+   m_textEdit->paste();
+}
+

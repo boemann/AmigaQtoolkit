@@ -39,6 +39,9 @@ public:
    void onUndoRedoActionTextsChanged();
    void onUndo();
    void onRedo();
+   void onCut();
+   void onCopy();
+   void onPaste();
 
 private:
    void openProject(const AQString &projectPath);
@@ -59,6 +62,9 @@ private:
 
    AQAction *m_undoAction;
    AQAction *m_redoAction;
+   AQAction *m_cutAction;
+   AQAction *m_copyAction;
+   AQAction *m_pasteAction;
 };
    
 #endif
