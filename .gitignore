@@ -1,3 +1,4 @@
 debug/*
 release/*.o
 release/AmigaDevStudio
+release/AmigaDevStudio.lha
