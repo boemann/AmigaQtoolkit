@@ -166,6 +166,11 @@ void AQLayout::invalidate()
    m_hasCachedExpandY = false;
 
    m_valid = false;
+   for (int i = 0; i < m_items.size(); ++i) {
+      AQLayout *l = dynamic_cast<AQLayout *>(m_items[i]);
+      if (l)
+         l->invalidate();
+   }
 }
 
 void AQLayout::setPos(const AQPoint &pos)
