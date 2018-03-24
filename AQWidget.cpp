@@ -113,6 +113,8 @@ bool AQWidget::isTopLevel() const
 void AQWidget::setMenu(AQMenu *menu)
 {
    m_menu = menu;
+   m_menu->setMenubarMode(true);
+   m_menu->setParent(this);
 }
 
 void AQWidget::setWindowTitle(const AQString &title)

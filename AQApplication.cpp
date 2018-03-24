@@ -4,7 +4,6 @@
 
 #include <exec/types.h>
 #include <intuition/intuition.h>
-#include <libraries/gadtools.h>
 
 #include <proto/exec.h>
 #include <proto/graphics.h>
@@ -24,7 +23,6 @@ using std::vector;
 extern struct ExecBase *SysBase;
 struct GfxBase *GfxBase;
 struct IntuitionBase *IntuitionBase;
-struct Library *GadToolsBase = nullptr;
 struct Library *LayersBase = nullptr;
 //extern struct Library *DOSBase;
 struct Library *IconBase = nullptr;
@@ -131,6 +129,37 @@ void AQObject::registerConnection(ConnectionBase *cb)
    m_connections.push_back(cb);
 }
 
+AQScreen::AQScreen()
+   : m_screen(nullptr)
+   , m_drawInfo(nullptr)
+   , m_visualInfo(nullptr)
+{
+   m_screen = LockPubScreen(NULL);
+
+   if (m_screen) {
+      m_visualInfo = GetVisualInfo(m_screen, TAG_DONE);
+      m_drawInfo = GetScreenDrawInfo(m_screen);
+   }
+}
+
+AQScreen::~AQScreen()
+{
+   if (m_visualInfo) {
+      FreeVisualInfo(m_visualInfo);
+   }
+   
+   if (m_drawInfo) {
+      FreeScreenDrawInfo(m_screen, m_drawInfo);
+   }
+   UnlockPubScreen(NULL, m_screen);
+}
+
+AQPoint AQScreen::menubarSize() const
+{
+   return AQPoint(m_screen->Width, m_screen->BarHeight+1);
+}
+
+
 AQApplication *AQApplication::s_aqApp = nullptr;
 
 AQApplication::AQApplication()
@@ -144,12 +173,13 @@ AQApplication::AQApplication()
    GfxBase = (struct GfxBase *) OpenLibrary((UBYTE*)"graphics.library", 39L);
    IntuitionBase = (struct IntuitionBase *) OpenLibrary((UBYTE*)"intuition.library", 39L);
    LayersBase = OpenLibrary((UBYTE*)"layers.library", 39L);
-   GadToolsBase = OpenLibrary((UBYTE*)"gadtools.library", 39L);
    DOSBase = (struct DosLibrary *)OpenLibrary((UBYTE*)"dos.library", 39L);
    IconBase = OpenLibrary((UBYTE*)"icon.library", 39L);
 
    if (LayersBase == nullptr)
       exit(20);
+
+   m_defaultScreen = new AQScreen();
 
    s_aqApp = this;
 
@@ -284,6 +314,14 @@ MsgPort *AQApplication::userPort() const
    return m_userPort;
 } 
 
+AQScreen *AQApplication::screen(AQWidget *w) const
+{
+//For now all windows on defaultScreen
+// Screen *s = w->m_window->m_window->WScreen;
+
+   return m_defaultScreen;
+}
+
 AQWidget *AQApplication::focusWidget() const
 {
    return m_focusWidget;
@@ -320,6 +358,7 @@ AQApplication::~AQApplication()
 {
    s_aqApp = nullptr;
    
+   delete m_defaultScreen;
    delete m_clipboard;
 
    DeleteMsgPort(m_userPort);
@@ -327,10 +366,6 @@ AQApplication::~AQApplication()
 
    if (IconBase) {
       CloseLibrary(IconBase);
-   }
-
-   if (GadToolsBase) {
-      CloseLibrary(GadToolsBase);
    }
 
    if (IntuitionBase) {

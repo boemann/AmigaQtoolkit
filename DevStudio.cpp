@@ -107,7 +107,7 @@ DevStudio::DevStudio()
 
    m_redoAction = new AQAction(this);
    m_redoAction->setShortcut("Shift+Amiga+Z");
-   m_redoAction->setText("Undo");
+   m_redoAction->setText("Redo");
    Connect<DevStudio>(m_redoAction, "triggered", this, &DevStudio::onRedo);
    aqApp->addAction(m_redoAction);
 

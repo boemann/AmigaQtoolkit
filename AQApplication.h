@@ -12,12 +12,33 @@
 class AQWindow;
 class AQWidget;
 struct MsgPort;
+struct RastPort;
 class AQString;
 class AQClipboard;
 class AQAction;
 
 typedef long BPTR;
 
+struct Screen;
+struct DrawInfo;
+
+class AQScreen {
+public:
+   AQScreen();
+   ~AQScreen();
+   AQPoint size() const { return AQPoint(640, 512);}
+   AQPoint menubarSize() const;
+   AQRect availableGeometry() const { return AQRect(0,10,640,502);}
+   void drawAmigaKey(RastPort *rp, int x, int y, bool enabled = true);
+
+   friend class AQWindow;
+   friend class AQIcon;
+
+private:
+   Screen *m_screen;
+   DrawInfo *m_drawInfo;
+   void *m_visualInfo;
+};
 
 class AQApplication : public AQObject
 {
@@ -40,6 +61,8 @@ public:
    bool isWindowBlocked(AQWindow *window) const;
 
    AQWidget *hoveredWidget() const;
+
+   AQScreen *screen(AQWidget *w = nullptr) const;
 
    static AQApplication *s_aqApp;
 
@@ -64,6 +87,7 @@ private:
    MsgPort *m_asyncFilePort;
    int m_loopDepth;
    AQClipboard *m_clipboard;
+   AQScreen *m_defaultScreen;
 };
 
 #endif

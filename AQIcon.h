@@ -23,8 +23,9 @@ public:
    ~AQIcon();
     
    bool isNull() const;
+   AQPoint size() const;
 
-   void paint(RastPort *rp, AQPoint pos, Size size);
+   void paint(RastPort *rp, AQPoint pos, Size size, bool enabled = true);
 
    AQIcon &operator=(const AQIcon &other);
 

@@ -15,6 +15,7 @@ struct RastPort;
 struct Region;
 
 class AQWidget;
+class AQScreen;
 
 class AQWindow {
 public:
@@ -61,8 +62,6 @@ private:
    void paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg);
    AQWidget *pickMouseReceiver(IntuiMessage &msg);
    struct Menu *m_menu;
-   DrawInfo *m_drawInfo;
-   void *m_visualInfo;
    bool m_active;
    WORD m_x;
    WORD m_y;
@@ -75,6 +74,7 @@ private:
    AQWidget *m_buttonDownWidget;
    static AQWidget *s_mouseGrabWidget;
    Region *m_dirtyRegion;
+   AQScreen *m_screen;
 };
 
 #endif

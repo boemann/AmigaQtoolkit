@@ -23,12 +23,9 @@ public:
    void exec(const AQPoint &pos);
    void popup(const AQPoint &pos);
 
-   NewMenu *buildGadMenu(NewMenu *gaditem);
-
 protected:
    virtual void paintEvent(RastPort *rp, const AQRect &rect);
    virtual void closeEvent();
-   virtual void changeEvent(int change);
 
    virtual bool mousePressEvent(const IntuiMessage &msg);
    virtual bool mouseMoveEvent(const IntuiMessage &msg);

@@ -21,13 +21,23 @@ public:
 
    void setShortcut(const AQString &sc);
    AQString shortcut() const;
+   AQString shortcutSansQualifier() const;
    bool matchShortcut(const IntuiMessage &msg);
+
+   int numQualifiers() const { return m_numQualifiers;}
+
+   bool hasCtrlQualifier() const { return m_scCtrl; }
+   bool hasAmigaQualifier() const { return m_scAmiga; }
+   bool hasAltQualifier() const { return m_scAlt; }
+   bool hasShiftQualifier() const { return m_scShift; }
 
    void trigger();
 
 private:
    AQString m_shortcut;
+   AQString m_sansQualifier;
    AQString m_text;
+   int m_numQualifiers;
    bool m_scCtrl;
    bool m_scAmiga;
    bool m_scAlt;

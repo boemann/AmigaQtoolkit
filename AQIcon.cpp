@@ -1,17 +1,14 @@
 
 #include <graphics/gfxbase.h>
+#include <intuition/intuition.h>
 
-#ifdef __GNUC__
 #include <proto/graphics.h>
 #include <proto/layers.h>
 #include <proto/icon.h>
-#else
-#include <pragma/graphics_lib.h>
-#include <pragma/layers_lib.h>
-#include <pragma/icon_lib.h>
-#endif
+#include <proto/intuition.h>
 
 #include <AQString.h>
+#include <AQApplication.h>
 
 #include "AQIcon.h"
 
@@ -116,10 +113,16 @@ AQIcon::AQIcon(const AQIcon &other)
    m_d->refs++;
 }
 
-void convertFromChars(RastPort *rp, char str[][17])
+AQPoint AQIcon::size() const
+{
+   return AQPoint(m_d->width, 8);
+}
+
+
+void convertFromChars(RastPort *rp, int w, char *str[])
 {
    for (int y = 0; y <8; ++y) {
-      for (int x = 0; x < 16; ++x) {
+      for (int x = 0; x < w; ++x) {
          if (str[y][x] == ' ')
             SetAPen(rp, 0);
          else
@@ -135,9 +138,8 @@ AQIcon::AQIcon(const AQString &fileName)
 {
    m_d->null = false;
 
-   m_d->init(16, 8, 2);
-
    if (fileName == AQString("drawer")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       SetAPen(&m_d->rastPort, 2);
       RectFill(&m_d->rastPort, 0, 0, 15 , 5);
@@ -157,6 +159,7 @@ AQIcon::AQIcon(const AQString &fileName)
    }
 
    if (fileName == AQString("AmigaTick")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       SetAPen(&m_d->rastPort, 2);
       RectFill(&m_d->rastPort, 0, 0, 15, 5);
@@ -184,6 +187,7 @@ AQIcon::AQIcon(const AQString &fileName)
    }
 
    if (fileName == AQString("back")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -198,6 +202,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("forward")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -212,6 +217,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("levelup")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -226,6 +232,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("right")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -244,6 +251,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("up")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -259,6 +267,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("down")) {
+      m_d->init(16, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -274,7 +283,8 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("wholeword")) {
-      char bit[8][17] = {
+      m_d->init(14, 8, 2);
+      char *bit[8] = {
       "              ",
       " 111111111111 ",
       "  1111  11    ",
@@ -283,12 +293,13 @@ AQIcon::AQIcon(const AQString &fileName)
       " 11  11 11 11 ",
       " 11  11 1111  ",
       " 111111111111 "};
-      convertFromChars(&m_d->rastPort, bit);
+      convertFromChars(&m_d->rastPort, 14, bit);
 
       m_d->genMask();
    }
    if (fileName == AQString("matchcase")) {
-      char bit[8][17] = {
+      m_d->init(14, 8, 2);
+      char *bit[8] = {
       "              ",
       "  1111        ",
       " 11  11       ",
@@ -297,12 +308,13 @@ AQIcon::AQIcon(const AQString &fileName)
       " 11  11  11111",
       " 11  11 11  11",
       " 11  11  11111"};
-      convertFromChars(&m_d->rastPort, bit);
+      convertFromChars(&m_d->rastPort, 14, bit);
 
       m_d->genMask();
    }
    if (fileName == AQString("application")) {
-      char bit[8][17] = {
+      m_d->init(14, 8, 2);
+      char *bit[8] = {
       "    1111111   ",
       " 1111111      ",
       "  11  11      ",
@@ -311,12 +323,58 @@ AQIcon::AQIcon(const AQString &fileName)
       "         11   ",
       "          11  ",
       "              "};
-      convertFromChars(&m_d->rastPort, bit);
+      convertFromChars(&m_d->rastPort, 14, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("shiftkey")) {
+      m_d->init(12, 8, 2);
+      char *bit[8] = {
+      "    111     ",
+      "   1   1    ",
+      "  1     1   ",
+      " 1       1  ",
+      "1111   1111 ",
+      "   1   1    ",
+      "   1   1    ",
+      "   11111    "};
+      convertFromChars(&m_d->rastPort, 12, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("altkey")) {
+      m_d->init(13, 8, 2);
+      char *bit[8] = {
+      "            ",
+      " 11  1 11111",
+      "1  1 1   1  ",
+      "1111 1   1  ",
+      "1  1 1   1  ",
+      "1  1 1   1  ",
+      "1  1 111 1  " ,
+      "            ",};
+      convertFromChars(&m_d->rastPort, 13, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("ctrlkey")) {
+      m_d->init(19, 8, 2);
+      char *bit[8] = {
+      "                   ",
+      " 11   11  11111 1  ",
+      "1  1 1  1   1   1  ",
+      "1    1111   1   1  ",
+      "1    11     1   1  ",
+      "1  1 1 1    1   1  ",
+      " 11  1  1   1   111" ,
+      "                   ",};
+      convertFromChars(&m_d->rastPort, 19, bit);
 
       m_d->genMask();
    }
    if (fileName == AQString("blank")) {
-      char bit[8][17] = {
+      m_d->init(14, 8, 2);
+      char *bit[8] = {
       "              ",
       "              ",
       "              ",
@@ -325,9 +383,17 @@ AQIcon::AQIcon(const AQString &fileName)
       "              ",
       "              " ,
       "              ",};
-      convertFromChars(&m_d->rastPort, bit);
+      convertFromChars(&m_d->rastPort, 14, bit);
 
       m_d->genMask();
+   }
+   if (fileName == AQString("amigakey")) {
+      Image *img = aqApp->screen()->m_drawInfo->dri_AmigaKey;
+      m_d->init(img->Width +1, img->Height +1, 2);
+      SetRast(&m_d->rastPort, 0);
+      DrawImage(&m_d->rastPort, img, 0, 0);
+      BltBitMap(&m_d->bitMap, 0, 0, &m_d->bitMapFakeMask, 0 ,0, m_d->width, m_d->bitMap.Rows,
+ 0xE0, 0x01, nullptr);
    }
 }
 
@@ -353,7 +419,14 @@ AQIcon &AQIcon::operator=(const AQIcon &other)
    return *this;
 }
 
-void AQIcon::paint(RastPort *rp, AQPoint pos, AQIcon::Size s)
+void AQIcon::paint(RastPort *rp, AQPoint pos, AQIcon::Size s, bool enabled)
 {
-   BltMaskBitMapRastPort(&m_d->bitMap, 0, 0, rp, pos.x, pos.y, 16, 8, 0xE0, m_d->bitMapMask.Planes[0]);
+   if (enabled)
+      BltMaskBitMapRastPort(&m_d->bitMap, 0, 0, rp, pos.x, pos.y, m_d->width, 8, 0xE0, m_d->bitMapMask.Planes[0]);
+   else {
+      int ap = rp->FgPen;
+      SetAPen(rp, 0);
+      BltPattern(rp, m_d->bitMapMask.Planes[0], pos.x, pos.y, pos.x+m_d->width, pos.y+8, m_d->bitMapMask.BytesPerRow);
+      SetAPen(rp, ap);
+   }
 }

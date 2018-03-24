@@ -135,6 +135,36 @@ int AQString::indexOf(const AQString sub) const
    return  pos - m_d->data;
 }
 
+int AQString::lastIndexOf(const AQString sub, int from) const
+{
+   if (from >= 0)
+      return -1;
+
+   if (sub.isEmpty())
+      return -1;
+
+   if (isEmpty())
+      return -1;
+
+   if (sub.m_d->size > m_d->size)
+      return -1;
+
+   char *ps1 = m_d->data + m_d->size + 1 + from;
+   char *pour;
+   char *psub;
+   while (ps1 != m_d->data) {
+      --ps1;
+      for (pour = ps1, psub = sub.m_d->data; ;) {
+         if (*(pour++) != *(psub++))
+            break;
+         else
+            if (*psub == 0)
+               return ps1 - m_d->data;
+      }
+   }
+   return -1;
+}
+
 AQString AQString::left(int n) const
 {
    if (isEmpty())
@@ -161,7 +191,7 @@ AQString AQString::right(int n) const
 
    if (n > m_d->size)
       return *this;
-   return AQString(m_d->data-n);
+   return AQString(m_d->data + m_d->size - n);
 }
 
 const int maxdigits[36] = {31,15,15,9,9,9,7,9,9,8,8,8,8,8,7,7,7};

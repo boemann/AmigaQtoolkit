@@ -35,6 +35,7 @@ public:
    bool endsWith(const AQString &ending) const;
    bool contains(const AQString &sub) const;
    int indexOf(const AQString sub) const;
+   int lastIndexOf(const AQString sub, int from=-1) const;
 
    AQString left(int n) const;
    AQString mid(int position, int n = -1) const;

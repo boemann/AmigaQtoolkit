@@ -5,7 +5,6 @@
 
 #include <exec/types.h>
 #include <intuition/intuition.h>
-#include <libraries/gadtools.h>
 #include <graphics/gfxbase.h>
 #include <devices/inputevent.h>
 #include <utility/hooks.h>
@@ -29,39 +28,19 @@ Hook refreshHook;
 
 AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    : m_window(nullptr)
-   , m_drawInfo(nullptr)
-   , m_visualInfo(nullptr)
    , m_active(true)
    , m_winControl(WidgetArea)
    , m_flags(Flags(flags & Normal))
    , m_widget(widget)
    , m_buttonDownWidget(nullptr)
    , m_dirtyRegion(NewRegion())
+   , m_screen(aqApp->screen(widget))
 {
    refreshHook.h_Entry = (ULONG (*)() )backfill;
 
-   // let's figure out a screen to show on
-   Screen *screen = nullptr;
-   AQWidget *pw = m_widget;
-   while (pw->parent())
-      pw = pw->parent();
-   if (pw && pw->m_window)
-      screen = pw->m_window->m_window->WScreen;
-
-   bool lockedPubScreen = false;
-   if (!screen) {
-      screen = LockPubScreen(NULL);
-      lockedPubScreen = true;
-   }
-
-   if (screen) {
-      m_visualInfo = GetVisualInfo(screen, TAG_DONE);
-      m_drawInfo = GetScreenDrawInfo(screen);
-   }
-
    if (m_flags & (TitleBar | CloseButton | MinimizeButton | MaximizeButton)) {
       m_border = AQPoint(4, 3);
-      m_titleHeight = m_drawInfo->dri_Font->tf_YSize;
+      m_titleHeight = m_screen->m_drawInfo->dri_Font->tf_YSize;
    } else  {
       m_border = AQPoint(0,0);
       m_titleHeight = 0;
@@ -81,12 +60,9 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    WA_MinHeight, 5,
    WA_ReportMouse, TRUE,
    WA_NewLookMenus, TRUE,
-   WA_CustomScreen, (ULONG)screen,
+   WA_CustomScreen, (ULONG)m_screen->m_screen,
    WA_BackFill, (ULONG)&refreshHook,
    TAG_DONE, 0L);
-
-   if (lockedPubScreen)
-      UnlockPubScreen(NULL, screen);
    
    m_window->UserPort = aqApp->userPort();
 
@@ -120,17 +96,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 
 AQWindow::~AQWindow()
 {
-   Screen *screen = m_window->WScreen;
-
    hide();
-
-   if (m_visualInfo) {
-      FreeVisualInfo(m_visualInfo);
-   }
-   
-   if (m_drawInfo) {
-      FreeScreenDrawInfo(screen, m_drawInfo);
-   }
 }
 
 AQWidget *AQWindow::widget() const
@@ -430,7 +396,7 @@ void AQWindow::paintDirty()
 
       rect.translate(pos);    // make rect as seen globally
 
-      int winBg = m_active ? m_drawInfo->dri_Pens[FILLPEN] : 0;
+      int winBg = m_active ? m_screen->m_drawInfo->dri_Pens[FILLPEN] : 0;
       winBg = 0;
       paintWidget(m_widget, rp, rect, winBg);
 
@@ -483,12 +449,12 @@ void AQWindow::paintAll()
 
    if (m_active) {
       SetRast(rp, 0);//m_drawInfo->dri_Pens[FILLPEN]);
-      SetAPen(rp, m_drawInfo->dri_Pens[FILLPEN]);
-      SetBPen(rp, m_drawInfo->dri_Pens[FILLPEN]);
+      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[FILLPEN]);
+      SetBPen(rp, m_screen->m_drawInfo->dri_Pens[FILLPEN]);
    } else {
       SetRast(rp, 0);
-      SetAPen(rp, m_drawInfo->dri_Pens[BACKGROUNDPEN]);
-      SetBPen(rp, m_drawInfo->dri_Pens[BACKGROUNDPEN]);
+      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[BACKGROUNDPEN]);
+      SetBPen(rp, m_screen->m_drawInfo->dri_Pens[BACKGROUNDPEN]);
    }
 
    RectFill(rp, 2, 1, w - 1, m_border.y + m_titleHeight - 2);
@@ -496,18 +462,18 @@ void AQWindow::paintAll()
    RectFill(rp, w-2, 1, w, h-1);
    RectFill(rp, 1, h, w-1, h);
 
-   SetAPen(rp, m_drawInfo->dri_Pens[SHADOWPEN]);
+   SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHADOWPEN]);
    Move(rp, w-1, 1); // inner line right side
    Draw(rp, w-1, h - 1);
    Draw(rp, 1, h - 1); // bottom line
-   SetAPen(rp, m_drawInfo->dri_Pens[SHINEPEN]);
+   SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHINEPEN]);
    Move(rp, 1, h - 1);
    Draw(rp, 1, 0); // inner line left side
    Draw(rp, w - 1, 0); // top line 
    
    // Draw the title
    if (m_flags & TitleBar) {
-      SetAPen(rp, m_drawInfo->dri_Pens[TEXTPEN]);
+      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[TEXTPEN]);
       Move(rp, m_border.x + 10 + m_window->IFont->tf_XSize
                              , m_border.y - 2 + m_window->IFont->tf_Baseline);   
       Text(rp, m_widget->m_title, m_widget->m_title.size());
@@ -515,9 +481,9 @@ void AQWindow::paintAll()
       
    // Draw the close button
    if (m_flags & CloseButton) {
-      SetAPen(rp, m_drawInfo->dri_Pens[SHADOWPEN]);
+      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHADOWPEN]);
       RectFill(rp, m_border.x + 1 , m_border.y, m_border.x + 5, m_border.y + 3);
-      SetAPen(rp, m_drawInfo->dri_Pens[SHINEPEN]);
+      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHINEPEN]);
       RectFill(rp, m_border.x + 2, m_border.y + 1, m_border.x + 4, m_border.y + 2);
    }
  

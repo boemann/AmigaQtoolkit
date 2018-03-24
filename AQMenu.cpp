@@ -10,6 +10,7 @@
 #include <AQString.h>
 #include <AQAction.h>
 #include <AQWindow.h>
+#include <AQIcon.h>
 
 #include <stdio.h>
 
@@ -87,6 +88,7 @@ void AQMenu::addAction(AQAction *action)
 
 void AQMenu::addMenu(AQMenu *menu)
 {
+   menu->setParent(this);
    m_entryType.push_back(MenuType);
    m_entryAction.push_back(nullptr);
    m_entryMenu.push_back(menu);
@@ -101,6 +103,12 @@ void AQMenu::updateSize()
    int scWidth = 0;
    int height = 4;
 
+   if (m_barMode) {
+      setMinimumSize(aqApp->screen()->menubarSize());
+      setPreferredSize(minimumSize());
+      return;
+   }
+
    for(int i = 0; i <m_entryType.size(); ++i) {
       switch (m_entryType[i]) {
       case SeparatorType:
@@ -109,25 +117,28 @@ void AQMenu::updateSize()
       case ActionType: {
          AQString text = m_entryAction[i]->text();
          width = aqMax(14 + TextLength(&rp, text, text.size()), width);
-         AQString scText = m_entryAction[i]->shortcut();
-         scWidth = aqMax(TextLength(&rp, scText, scText.size()), scWidth);
 
+         AQString scText = m_entryAction[i]->shortcutSansQualifier();
+         int w = TextLength(&rp, scText, scText.size());
+         if (m_entryAction[i]->hasAltQualifier())
+            w += 14+2;
+         if (m_entryAction[i]->hasShiftQualifier())
+            w += 11+2;
+         if (m_entryAction[i]->hasAmigaQualifier())
+            w += 22;
+         scWidth = aqMax(w, scWidth);
+         
          height += rp.TxHeight + 2;
          break;
       }
       case MenuType: {
          AQString text = m_entryMenu[i]->m_title;
-         if (m_barMode)
-            width += 14 + TextLength(&rp, text, text.size());
-         else
-            width = aqMax(14 + TextLength(&rp, text, text.size()), width);
+         width = aqMax(14 + TextLength(&rp, text, text.size()), width);
+
          AQString scText = "»";
          scWidth = aqMax(TextLength(&rp, scText, scText.size()), scWidth);
 
-         if (m_barMode)
-            height = rp.TxHeight + 3;
-         else
-            height += rp.TxHeight + 2;
+         height += rp.TxHeight + 2;
          break;
       }
       }
@@ -142,12 +153,6 @@ void AQMenu::updateSize()
 
 void AQMenu::closeEvent()
 {
-}
-
-void AQMenu::changeEvent(int change)
-{
- //  if (change == AQWidget::InActivation)
-   //   hide();
 }
 
 void AQMenu::paintEvent(RastPort *rp, const AQRect &rect)
@@ -191,7 +196,8 @@ void AQMenu::paintEvent(RastPort *rp, const AQRect &rect)
          break;
       }
       case ActionType: {
-         if (!m_entryAction[i]->enabled())
+         bool en = m_entryAction[i]->enabled();
+         if (!en)
             SetAPen(rp, 0);
 
          Move(rp, 6, y);
@@ -204,8 +210,37 @@ void AQMenu::paintEvent(RastPort *rp, const AQRect &rect)
 
          Text(rp, text, text.size());
 
-         AQString scText = m_entryAction[i]->shortcut();
-         Move(rp, right - 6 - TextLength(rp, scText, scText.size()), y);
+         AQString scText = m_entryAction[i]->shortcutSansQualifier();
+         int n = m_entryAction[i]->numQualifiers();
+         int tx = right - 6 - TextLength(rp, scText, scText.size());
+         if (n) {
+            int ttx = tx;
+            if (m_entryAction[i]->hasAmigaQualifier()) {
+               AQIcon i("amigakey");
+               ttx -= i.size().x + 2;
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+            }
+
+            if (m_entryAction[i]->hasAltQualifier()) {
+               AQIcon i("altkey");
+               ttx -= i.size().x + 2;
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+            }
+
+            if (m_entryAction[i]->hasShiftQualifier()) {
+               AQIcon i("shiftkey");
+               ttx -= i.size().x + 2;
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+            }
+
+            if (m_entryAction[i]->hasCtrlQualifier()) {
+               AQIcon i("ctrlkey");
+               ttx -= i.size().x + 2;
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+            }
+
+         }
+         Move(rp, tx, y);
          Text(rp, scText, scText.size());
 
          y += rp->TxHeight + 2;
