@@ -116,6 +116,20 @@ AQIcon::AQIcon(const AQIcon &other)
    m_d->refs++;
 }
 
+void convertFromChars(RastPort *rp, char str[][17])
+{
+   for (int y = 0; y <8; ++y) {
+      for (int x = 0; x < 16; ++x) {
+         if (str[y][x] == ' ')
+            SetAPen(rp, 0);
+         else
+            SetAPen(rp, str[y][x] - '0');
+
+         WritePixel(rp,x,y);
+      }
+   }
+}
+
 AQIcon::AQIcon(const AQString &fileName)
    : m_d(new AQIconPrivate)
 {
@@ -256,6 +270,62 @@ AQIcon::AQIcon(const AQString &fileName)
       Draw(&m_d->rastPort, 4, 3);
       Move(&m_d->rastPort, 3, 4);
       Draw(&m_d->rastPort, 3, 4);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("wholeword")) {
+      char bit[8][17] = {
+      "              ",
+      " 111111111111 ",
+      "  1111  11    ",
+      " 11  11 11    ",
+      " 111111 1111  ",
+      " 11  11 11 11 ",
+      " 11  11 1111  ",
+      " 111111111111 "};
+      convertFromChars(&m_d->rastPort, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("matchcase")) {
+      char bit[8][17] = {
+      "              ",
+      "  1111        ",
+      " 11  11       ",
+      " 11  11  1111 ",
+      " 111111     11",
+      " 11  11  11111",
+      " 11  11 11  11",
+      " 11  11  11111"};
+      convertFromChars(&m_d->rastPort, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("application")) {
+      char bit[8][17] = {
+      "    1111111   ",
+      " 1111111      ",
+      "  11  11      ",
+      "       11     ",
+      "        11    ",
+      "         11   ",
+      "          11  ",
+      "              "};
+      convertFromChars(&m_d->rastPort, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("blank")) {
+      char bit[8][17] = {
+      "              ",
+      "              ",
+      "              ",
+      "              ",
+      "              ",
+      "              ",
+      "              " ,
+      "              ",};
+      convertFromChars(&m_d->rastPort, bit);
 
       m_d->genMask();
    }
