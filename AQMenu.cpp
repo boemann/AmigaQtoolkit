@@ -9,6 +9,7 @@
 #include <AQApplication.h>
 #include <AQString.h>
 #include <AQAction.h>
+#include <AQWindow.h>
 
 #include <stdio.h>
 
@@ -18,8 +19,8 @@ const int SeparatorType = 0;
 const int ActionType = 1;
 const int MenuType = 2;
 
-AQMenu::AQMenu(const AQString &title)
-   : AQWidget(nullptr)
+AQMenu::AQMenu(const AQString &title, AQWidget *parent)
+   : AQWidget(parent)
    , m_hoveredItem(-1)
    , m_execed(false)
    , m_barMode(false)
@@ -32,7 +33,7 @@ AQMenu::AQMenu(const AQString &title)
    setPreferredSize(AQPoint(8, 4));
    setMinimumSize(AQPoint(8, 4));
    setWindowModality(2);
-   setWindowFlags(0);
+   setWindowFlags(AQWindow::Popup);
 }
 
 AQMenu::~AQMenu()

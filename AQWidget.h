@@ -27,11 +27,16 @@ public:
 
    void setParent(AQWidget *parentW);
 
+   bool isEnabled() const { return m_enabled;}
+   void setEnabled(bool enabled) {m_enabled = enabled;}
+
    void show();
    void hide();
 
-   bool isEnabled() const { return m_enabled;}
-   void setEnabled(bool enabled) {m_enabled = enabled;}
+   bool isVisible() const;
+   void setVisible(bool visible);
+
+   bool isTopLevel() const;
 
    void setMenu(AQMenu *menu);
 
@@ -171,6 +176,7 @@ private:
    bool m_expandX;
    bool m_expandY;
    bool m_enabled;
+   bool m_visible;
    AQString m_title;
 
    AQLayout *m_layout;

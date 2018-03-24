@@ -29,7 +29,8 @@ public:
       MaximizeButton = 0x40,
       MinimizeButton = 0x80,
       Normal = 0xFF,
-      Hover = 0xF000
+      Hover = 0x8000,
+      Popup = 0x100
    };
 
    AQWindow(AQWidget *widget, int modality, UWORD flags);
@@ -62,7 +63,6 @@ private:
    struct Menu *m_menu;
    DrawInfo *m_drawInfo;
    void *m_visualInfo;
-   Screen *m_pubScreen;
    bool m_active;
    WORD m_x;
    WORD m_y;

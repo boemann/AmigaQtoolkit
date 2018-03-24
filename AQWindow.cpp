@@ -31,7 +31,6 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    : m_window(nullptr)
    , m_drawInfo(nullptr)
    , m_visualInfo(nullptr)
-   , m_pubScreen(nullptr)
    , m_active(true)
    , m_winControl(WidgetArea)
    , m_flags(Flags(flags & Normal))
@@ -41,10 +40,23 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 {
    refreshHook.h_Entry = (ULONG (*)() )backfill;
 
-   m_pubScreen = LockPubScreen(NULL);
-   if (m_pubScreen) {
-      m_visualInfo = GetVisualInfo(m_pubScreen, TAG_DONE);
-      m_drawInfo = GetScreenDrawInfo(m_pubScreen);
+   // let's figure out a screen to show on
+   Screen *screen = nullptr;
+   AQWidget *pw = m_widget;
+   while (pw->parent())
+      pw = pw->parent();
+   if (pw && pw->m_window)
+      screen = pw->m_window->m_window->WScreen;
+
+   bool lockedPubScreen = false;
+   if (!screen) {
+      screen = LockPubScreen(NULL);
+      lockedPubScreen = true;
+   }
+
+   if (screen) {
+      m_visualInfo = GetVisualInfo(screen, TAG_DONE);
+      m_drawInfo = GetScreenDrawInfo(screen);
    }
 
    if (m_flags & (TitleBar | CloseButton | MinimizeButton | MaximizeButton)) {
@@ -69,9 +81,13 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    WA_MinHeight, 5,
    WA_ReportMouse, TRUE,
    WA_NewLookMenus, TRUE,
+   WA_CustomScreen, (ULONG)screen,
    WA_BackFill, (ULONG)&refreshHook,
    TAG_DONE, 0L);
 
+   if (lockedPubScreen)
+      UnlockPubScreen(NULL, screen);
+   
    m_window->UserPort = aqApp->userPort();
 
    ModifyIDCMP(m_window, CLOSEWINDOW | IDCMP_VANILLAKEY | IDCMP_RAWKEY
@@ -104,7 +120,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 
 AQWindow::~AQWindow()
 {
-   ClearMenuStrip(m_window);
+   Screen *screen = m_window->WScreen;
 
    hide();
 
@@ -113,11 +129,7 @@ AQWindow::~AQWindow()
    }
    
    if (m_drawInfo) {
-      FreeScreenDrawInfo(m_pubScreen, m_drawInfo);
-   }
-
-   if (m_pubScreen) {
-      UnlockPubScreen(NULL, m_pubScreen);
+      FreeScreenDrawInfo(screen, m_drawInfo);
    }
 }
 
@@ -242,8 +254,13 @@ void AQWindow::event(IntuiMessage &msg)
    case IDCMP_VANILLAKEY:
      if (!aqApp->isWindowBlocked(this)) {
          AQWidget *receiver = aqApp->focusWidget();
-         while (receiver && !receiver->event(msg))
-            receiver = receiver->parent();
+         while (receiver && !receiver->event(msg)) {
+            if (receiver->isTopLevel())
+               receiver = nullptr;
+            else {
+               receiver = receiver->parent();
+            }
+         }
       }
       break;
 
@@ -252,11 +269,13 @@ void AQWindow::event(IntuiMessage &msg)
 
       if (receiver) {
          while (receiver && !receiver->event(msg)) {
-            if (receiver->parent()) {
+            if (receiver->isTopLevel())
+               receiver = nullptr;
+            else {
+               receiver = receiver->parent();
                msg.MouseX += receiver->pos().x;
                msg.MouseY += receiver->pos().y;
             }
-            receiver = receiver->parent();
          }
 
          // receiver is valid if we broke loop because event() gave true
@@ -278,11 +297,13 @@ void AQWindow::event(IntuiMessage &msg)
 
       if (receiver) {
          while (receiver && !receiver->event(msg)) {
-            if (receiver->parent()) {
+            if (receiver->isTopLevel())
+               receiver = nullptr;
+            else {
+               receiver = receiver->parent();
                msg.MouseX += receiver->pos().x;
                msg.MouseY += receiver->pos().y;
             }
-            receiver = receiver->parent();
          }
       }
       break;
@@ -357,6 +378,8 @@ void AQWindow::paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg)
    for (int i = 0; i < w->children().size(); ++i) {
       AQWidget *child = w->children()[i];
 
+      if (child->isTopLevel())
+         continue;
       if (child->geometry().contains(clip)) {
          // child can handle all of the clip
          paintWidget(child, rp, clip, winBg);
@@ -376,6 +399,8 @@ void AQWindow::paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg)
    // now paint children
    for (int i = 0; i < w->children().size(); ++i) {
       AQWidget *child = w->children()[i];
+      if (child->isTopLevel())
+         continue;
       paintWidget(child, rp, clip, winBg);
    }
 
@@ -484,7 +509,7 @@ void AQWindow::paintAll()
    if (m_flags & TitleBar) {
       SetAPen(rp, m_drawInfo->dri_Pens[TEXTPEN]);
       Move(rp, m_border.x + 10 + m_window->IFont->tf_XSize
-                             , m_border.y - 2 + m_window->IFont->tf_Baseline);	
+                             , m_border.y - 2 + m_window->IFont->tf_Baseline);   
       Text(rp, m_widget->m_title, m_widget->m_title.size());
    }
       

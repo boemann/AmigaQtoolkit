@@ -12,6 +12,7 @@
 #include <AQApplication.h>
 #include <AQWindow.h>
 #include <AQAction.h>
+#include <AQMenu.h>
 
 AQWidget::AQWidget(AQWidget *parent)
    : AQObject(parent)
@@ -24,6 +25,7 @@ AQWidget::AQWidget(AQWidget *parent)
    , m_expandX(true)
    , m_expandY(false)
    , m_enabled(true)
+   , m_visible(true)
    , m_layout(nullptr)
    , m_oldClip(nullptr)
    , m_window(nullptr)
@@ -36,7 +38,6 @@ AQWidget::AQWidget(AQWidget *parent)
 {
    setParent(parent);
 }
-
 
 AQWidget::~AQWidget()
 {
@@ -68,17 +69,46 @@ void AQWidget::setParent(AQWidget *pw)
 
 void AQWidget::show()
 {
-   if (!m_parent && m_window == nullptr)
-       m_window = new AQWindow(this, m_windowModality, m_windowFlags);
+   setVisible(true);
 }
 
 void AQWidget::hide()
 {
-   if (!m_parent && m_window) {
-       m_window->hide();
-       m_window = nullptr;
+   setVisible(false);
+}
+
+bool AQWidget::isVisible() const
+{
+   if (!m_visible)
+      return  false;
+
+   if (isTopLevel())
+      return m_window;
+   else
+      return m_parent->isVisible();
+}
+
+void AQWidget::setVisible(bool visible)
+{
+   m_visible = visible;
+
+   if (visible) {
+      if (isTopLevel() && m_window == nullptr)
+          m_window = new AQWindow(this, m_windowModality, m_windowFlags);
+   } else {
+      if (m_window) {
+          m_window->hide();
+          delete m_window;
+          m_window = nullptr;
+      }
    }
 }
+
+bool AQWidget::isTopLevel() const
+{
+   return (!m_parent) || (m_windowFlags & AQWindow::Popup);
+}
+
 
 void AQWidget::setMenu(AQMenu *menu)
 {
@@ -102,11 +132,11 @@ void AQWidget::setWindowFlags(UWORD flags)
 
 int AQWidget::fontHeight() const
 {
-   if (m_parent)
-      return m_parent->fontHeight();
-
    if (m_window)
       return m_window->m_window->RPort->TxHeight;
+
+   if (m_parent)
+      return m_parent->fontHeight();
 
    return 1;
 }
@@ -239,12 +269,12 @@ void AQWidget::setLayout(AQLayout *layout)
 
 void AQWidget::updateGeometry()
 {
-   if (m_parent) {
+   if (!isTopLevel()) {
       AQLayout *pl = m_parent->layout();
       if (pl) {
          pl->invalidate();
          // the parent might need to do the same
-         if (m_parent->m_parent && m_parent->m_parent->m_layout)
+         if (!m_parent->isTopLevel() && m_parent->m_parent->m_layout)
             m_parent->updateGeometry();
          else {
             pl->layout(m_parent->size());
@@ -290,7 +320,7 @@ void AQWidget::update(const AQRect &rect)
 {
    AQRect r(rect.topLeft + m_pos, rect.bottomRight + m_pos);
 
-   if (m_parent)
+   if (!isTopLevel())
       m_parent->update(r);
    else if (m_window)
       m_window->markDirty(rect);
@@ -306,7 +336,7 @@ void AQWidget::scroll(const AQPoint &delta, const AQRect &rect)
       return;
    }
 
-   if (m_parent)
+   if (!isTopLevel())
       m_parent->scroll(delta, r);
    else if (m_window) {
       m_window->scroll(delta, rect);
@@ -379,6 +409,8 @@ AQWidget *AQWidget::widgetAt(WORD &x, WORD &y)
 
    for (int i = 0; i < m_children.size(); ++i) {
       AQWidget *child = m_children[i];
+      if (child->isTopLevel())
+         continue;
       if (child->geometry().contains(p)) {
          x -= child->pos().x;
          y -= child->pos().y;
@@ -391,7 +423,7 @@ AQWidget *AQWidget::widgetAt(WORD &x, WORD &y)
 
 AQPoint AQWidget::mapToGlobal(const AQPoint &p) const
 {
-   if (m_parent)
+   if (!isTopLevel())
       return m_parent->mapToGlobal(p + pos());
 
    return p + pos() + m_window->clientOffset();;
@@ -399,7 +431,7 @@ AQPoint AQWidget::mapToGlobal(const AQPoint &p) const
 
 AQPoint AQWidget::mapFromGlobal(const AQPoint &p) const
 {
-   if (m_parent)
+   if (!isTopLevel())
       return m_parent->mapFromGlobal(p - pos());
 
    return p - pos() - m_window->clientOffset();

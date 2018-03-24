@@ -11,7 +11,7 @@ struct NewMenu;
 class AQMenu : public AQWidget
 {
 public:
-   AQMenu(const AQString &title = AQString());
+   AQMenu(const AQString &title = AQString(), AQWidget*parent = nullptr);
    ~AQMenu();
 
    void setMenubarMode(bool on);
