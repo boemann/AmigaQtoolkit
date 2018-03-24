@@ -2,15 +2,18 @@
 #define ADS_H
 
 #include <map.h>
+#include <vector.h>
 #include <AQMainWindow.h>
 #include <AQString.h>
 
 class AQTextEdit;
+class AQTextCursor;
 class AQListView;
 class AQListItem;
 class Project;
 class AQLabel;
 class DocInfo;
+class FindWidget;
 
 typedef long BPTR;
 
@@ -54,6 +57,8 @@ private:
    AQListView *m_outputView;
    AQListItem *m_incompleteAddedOutput;
    AQLabel *m_positionLabel;
+   FindWidget *m_findWidget;
+
    Project *m_project;
    map<AQString, DocInfo *> m_loadedDocs;
    DocInfo *m_currentDoc;
@@ -65,6 +70,8 @@ private:
    AQAction *m_cutAction;
    AQAction *m_copyAction;
    AQAction *m_pasteAction;
+   AQAction *m_findAction;
+   AQAction *m_replaceAction;
 };
    
 #endif

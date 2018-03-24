@@ -30,6 +30,7 @@ SRCS = AQApplication.cpp \
        AQMainWindow.cpp \
        DevStudio.cpp \
        Project.cpp \
+       FindWidget.cpp \
        main.cpp 
 
 HDRS = AQApplication.h \
@@ -58,6 +59,7 @@ HDRS = AQApplication.h \
        AQMainWindow.h \
        DevStudio.h \
        Project.h \
+       FindWidget.h \
        main.h 
 
 _OBJS = $(SRCS)

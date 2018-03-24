@@ -99,6 +99,14 @@ public:
 
    void render(RastPort *rp, AQPoint docOffset, AQPoint botRight);
    int blockNumber(int pos);
+
+   enum FindFlags {
+      Backward = 0x01,
+      CaseInsensitively = 0x02,
+      WholeWord = 0x04
+   };
+   AQTextCursor *find(const AQString &sub, int from, int flags = 0);
+
    AQTextBlock findBlockByLineNumber(int line) const;
 
    int positionOfPoint(const AQPoint &p) const;

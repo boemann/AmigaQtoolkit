@@ -317,21 +317,73 @@ void AQTextCursor::setPosition(int pos, bool keepAnchor)
    }
 }
 
+#define isAlnum(p) (isalnum(m_doc.m_data[p]) || m_doc.m_data[p] == '_')
+
 void AQTextCursor::select(AQTextCursor::SelectionType type)
 {
    switch(type) {
-   default:
+   case WordUnderCursor: {;
       m_state.anchorPos = m_state.pos;
       m_state.anchorInBlock = m_state.posInBlock;
-      while (m_state.anchorPos && isalnum(m_doc.m_data[m_state.anchorPos-1])) {
+
+      bool doSpace = m_doc.m_data[m_state.pos] == ' '
+                  || m_doc.m_data[m_state.pos] == '\n'
+                  || m_doc.m_data[m_state.pos] == '\t'
+                  || m_doc.m_data[m_state.pos] == 0;
+      bool doAlnum = isAlnum(m_state.pos);
+
+      while (m_state.anchorInBlock) {
+         if (doSpace) {
+            if(m_doc.m_data[m_state.anchorPos - 1] != ' '
+                  && m_doc.m_data[m_state.anchorPos - 1] != '\n'
+                  && m_doc.m_data[m_state.anchorPos - 1] != '\t') {
+               if (m_state.anchorPos == m_state.pos) {
+                  doSpace = false;
+                  doAlnum = isAlnum(m_state.anchorPos - 1);
+               }
+               else
+                  break;
+            }
+         } else if (doAlnum) {
+            if (!isAlnum(m_state.anchorPos - 1))
+               break;
+         } else
+            break;
+
          --m_state.anchorPos;
          --m_state.anchorInBlock;
       }
-      while (m_doc.m_data[m_state.pos] && isalnum(m_doc.m_data[m_state.pos])) {
+
+      while (m_doc.m_data[m_state.pos]) {
+         if (doSpace) {
+            if(m_doc.m_data[m_state.pos] != ' '
+                  && m_doc.m_data[m_state.pos] != '\t')
+               break;
+         } else if (doAlnum) {
+            if (!isAlnum(m_state.pos))
+               break;
+         } else
+            break;
+
          ++m_state.pos;
          ++m_state.posInBlock;
       }
+
+      if (!doSpace && !doAlnum) {
+         m_state.pos = m_state.anchorPos + 1;
+         m_state.posInBlock = m_state.anchorInBlock + 1;
+      }
       m_state.wishX = m_state.posInBlock;
+      break;
+   }
+   
+   default:
+      m_state.anchorPos = m_state.pos - m_state.posInBlock;
+      m_state.anchorInBlock = 0;
+      while(m_doc.m_data[m_state.pos] && m_doc.m_data[m_state.pos] != '\n') {
+         ++m_state.pos;
+         ++m_state.posInBlock;
+      }      
    }
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
@@ -717,7 +769,6 @@ void AQTextDoc::render(RastPort *rp, AQPoint docOffset, AQPoint botRight)
    UWORD y = rp->TxBaseline;
    rp->DrawMode = JAM1;
 
-   AQTextCursor *cursor = m_cursors.front(); // prep for when we have more than 1
 
    int b = docOffset.y / m_lineHeight;
    y += b * m_lineHeight;
@@ -732,38 +783,41 @@ void AQTextDoc::render(RastPort *rp, AQPoint docOffset, AQPoint botRight)
       Text(rp, m_blocks[b].m_pos + m_data, len);
 
       // Next draw the cursors on top
-      if (cursor->hasSelection() ) {
-         int extra = 0;
-         int nextLineStart = m_blocks[b+1].m_pos;
-         int thisLineStart = m_blocks[b].m_pos;
-         int selStart = cursor->selectionStart();
-         int selEnd = cursor->selectionEnd();
-         if (selStart < nextLineStart && selEnd >= thisLineStart) {
-            if (selStart < thisLineStart)
-               selStart = thisLineStart;
-            if (selEnd == thisLineStart)
-               extra = 2;
-            if (selEnd >= nextLineStart) {
-               len = nextLineStart - selStart - 1;
-               extra = rp->TxWidth;
-            } else
-               len = selEnd - selStart;
-            int x = (selStart - thisLineStart) * rp->TxWidth - docOffset.x;
+      for (int i = m_cursors.size() -1; i >= 0; --i) {
+         AQTextCursor *cursor = m_cursors[i];
 
-            SetDrMd(rp, JAM2);
-            SetAPen(rp, 2);
-            SetBPen(rp, 3);
-            Move(rp, x, y - docOffset.y);
-            Text(rp, m_data + selStart, len);
-            if (extra > 0) {
-               SetAPen(rp, 3);
-               x += len * rp->TxWidth;
-               int tmpY = y - docOffset.y - rp->TxBaseline;
-               RectFill(rp, x, tmpY, x + extra - 1, tmpY + rp->TxHeight - 1);
-            }
-         }   
+         if (cursor->hasSelection() ) {
+            int extra = 0;
+            int nextLineStart = m_blocks[b+1].m_pos;
+            int thisLineStart = m_blocks[b].m_pos;
+            int selStart = cursor->selectionStart();
+            int selEnd = cursor->selectionEnd();
+            if (selStart < nextLineStart && selEnd >= thisLineStart) {
+               if (selStart < thisLineStart)
+                  selStart = thisLineStart;
+               if (selEnd == thisLineStart)
+                  extra = 2;
+               if (selEnd >= nextLineStart) {
+                  len = nextLineStart - selStart - 1;
+                  extra = rp->TxWidth;
+               } else
+                  len = selEnd - selStart;
+               int x = (selStart - thisLineStart) * rp->TxWidth - docOffset.x;
+
+               SetDrMd(rp, JAM2);
+               SetAPen(rp, i>0 ? 1 : 2);
+               SetBPen(rp, i>0 ? 7 : 3);
+               Move(rp, x, y - docOffset.y);
+               Text(rp, m_data + selStart, len);
+               if (extra > 0) {
+                  SetAPen(rp, 3);
+                  x += len * rp->TxWidth;
+                  int tmpY = y - docOffset.y - rp->TxBaseline;
+                  RectFill(rp, x, tmpY, x + extra - 1, tmpY + rp->TxHeight - 1);
+               }
+            }   
+         }
       }
-
       y += m_lineHeight;
       if (y - docOffset.y >= botRight.y)
          break;
@@ -818,6 +872,87 @@ int AQTextDoc::blockNumber(int pos)
          return blockNum;
    }
    return -1; // can never happen
+}
+
+static char *strrstr(const char *haystack, char *haystackEnd,
+                     const char *needle, const char *needleEnd)
+{
+   if (haystack == nullptr || needle == nullptr)
+      return nullptr;
+
+   for ( ; haystackEnd >= haystack; --haystackEnd) {
+      const char *n;
+      char *h;
+      for (h = haystackEnd, n = needleEnd; n >= needle &&( *h == *n); --h, --n) {
+         // So far it's matching
+      }
+      if (n + 1 == needle)
+         return h + 1;
+   }
+   return nullptr;
+}
+
+static char *strcasestr(char *haystack, const char *needle)
+{
+   if (haystack == nullptr || needle == nullptr)
+      return nullptr;
+
+   for ( ;*haystack; ++haystack) {
+      const char *n;
+      const char *h;
+      for (h = haystack, n = needle; *n &&( toupper(*h) == toupper(*n)); ++h, ++n) {
+         // So far it's matching
+      }
+
+      if (*n == 0)
+         return haystack;
+   }
+   return nullptr;
+}
+
+AQTextCursor *AQTextDoc::find(const AQString &sub, int from, int flags)
+{
+   if (sub.isEmpty())
+      return nullptr;
+
+   if (from < 0 || from >= m_size)
+      return nullptr;
+
+   char *pos = m_data + from;
+   while (true) {
+      if (flags & Backward) {
+         pos = strrstr(m_data, pos, (char *)sub, (char *)sub + sub.size()-1);
+      } else {
+         if (flags & CaseInsensitively)
+            pos = strcasestr(pos, (char *)sub);
+         else
+            pos = strstr(pos, (char *)sub);
+      }
+      if (pos == nullptr)
+         return nullptr;
+
+      if (flags & WholeWord) {
+         char *pre = pos - 1;
+         char *end = pos + sub.size() - 1;
+         char *post = end + 1;
+         if (((isalnum(*pre) || *pre=='_') && (isalnum(*pos) || *pos =='_'))
+          || ((isalnum(*end) || *end=='_') && (isalnum(*post) || *post =='_')))
+         {
+            if (flags & Backward)
+               --pos;
+            else
+               ++pos;
+
+            continue;
+         }
+      }
+      break;
+   }
+
+   AQTextCursor *cursor = new AQTextCursor(*this);
+   cursor->setPosition(pos - m_data);
+   cursor->setPosition(pos - m_data + sub.size(), true);
+   return cursor;
 }
 
 AQTextBlock AQTextDoc::findBlockByLineNumber(int line) const

@@ -74,6 +74,11 @@ void AQTextEdit::setDocument(AQTextDoc *doc, AQTextCursor *cursor)
    update();
 }
 
+AQTextCursor *AQTextEdit::mainCursor() const
+{
+   return m_cursor;
+}
+
 AQScrollBar *AQTextEdit::verticalScrollBar() const
 {
    return m_scrollBar;
@@ -247,11 +252,11 @@ bool AQTextEdit::keyEvent(const IntuiMessage &msg)
          break;
       case Key_PageUp:
       case Key_Numeric9:
-         m_cursor->movePageUp((size().y -4) / m_doc->lineHeight(), msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         m_cursor->movePageUp((size().y -4) / m_doc->lineHeight()-1, msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
          break;
       case Key_PageDown:
       case Key_Numeric3:
-         m_cursor->movePageDown((size().y -4) / m_doc->lineHeight(), msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         m_cursor->movePageDown((size().y -4) / m_doc->lineHeight()-1, msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
          break;
       default:
          return 0;

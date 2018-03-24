@@ -282,6 +282,36 @@ AQIcon::AQIcon(const AQString &fileName)
 
       m_d->genMask();
    }
+   if (fileName == AQString("find-previous")) {
+      m_d->init(7, 8, 2);
+      char *bit[8] = {
+      "       ",
+      "       ",
+      "       ",
+      "   1   ",
+      "  1 1  ",
+      " 1   1 ",
+      "1     1",
+      "       "};
+      convertFromChars(&m_d->rastPort, 7, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("find-next")) {
+      m_d->init(7, 8, 2);
+      char *bit[8] = {
+      "       ",
+      "       ",
+      "       ",
+      "1     1",
+      " 1   1 ",
+      "  1 1  ",
+      "   1   ",
+      "       "};
+      convertFromChars(&m_d->rastPort, 7, bit);
+
+      m_d->genMask();
+   }
    if (fileName == AQString("wholeword")) {
       m_d->init(12, 8, 2);
       char *bit[8] = {
@@ -309,6 +339,36 @@ AQIcon::AQIcon(const AQString &fileName)
       "11  11 11  11",
       "11  11  11111"};
       convertFromChars(&m_d->rastPort, 13, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("replace")) {
+      m_d->init(17, 8, 2);
+      char *bit[8] = {
+      "                 ",
+      "11               ",
+      "11     2   111111",
+      "11      2  11   1",
+      "1111 22222 1  111",
+      "11 11   2  1  111",
+      "11 11  2   11   1",
+      "1111       111111"};
+      convertFromChars(&m_d->rastPort, 17, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("replaceall")) {
+      m_d->init(20, 8, 2);
+      char *bit[8] = {
+      "1                   ",
+      "1            1111   ",
+      "1   1    2   1  1   ",
+      "111 1     2  1 11111",
+      "1 1 1  22222 1  1  1",
+      "111 111   2  1111 11",
+      "    1 1  2      1  1",
+      "    111         1111"};
+      convertFromChars(&m_d->rastPort, 20, bit);
 
       m_d->genMask();
    }

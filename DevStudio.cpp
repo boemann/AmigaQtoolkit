@@ -15,6 +15,7 @@
 
 #include "Project.h"
 #include "DevStudio.h"
+#include "FindWidget.h"
 
 #include <stdio.h>
 
@@ -26,6 +27,7 @@ struct DocInfo
    AQTextCursor *cursor;
    AQPoint offset;
    AQCommandStack *commandStack;
+   int m_findReplaceMode; //0=no, 1=find, replace = 2
 
    void onCommandAvailable();
 };
@@ -35,6 +37,7 @@ DocInfo::DocInfo(DevStudio *studio, const AQString &path)
    doc = new AQTextDoc(studio);
    doc->loadFile(path);
    cursor = new AQTextCursor(*doc);
+   m_findReplaceMode = 0; // intiallly no find replace widget
    commandStack = new AQCommandStack();
    Connect<DocInfo>(doc, "commandAvailable", this, &DocInfo::onCommandAvailable);
    Connect<DevStudio>(doc, "cursorPositionChanged", studio, &DevStudio::onCursorPositionChanged);
@@ -129,6 +132,20 @@ DevStudio::DevStudio()
    Connect<DevStudio>(m_pasteAction, "triggered", this, &DevStudio::onPaste);
    aqApp->addAction(m_pasteAction);
 
+   AQAction *clearFindAction = new AQAction(this);
+   clearFindAction->setShortcut("Esc");
+   aqApp->addAction(clearFindAction);
+
+   m_findAction = new AQAction(this);
+   m_findAction->setShortcut("Amiga+F");
+   m_findAction->setText("Find");
+   aqApp->addAction(m_findAction);
+
+   m_replaceAction = new AQAction(this);
+   m_replaceAction->setShortcut("Amiga+H");
+   m_replaceAction->setText("Replace");
+   aqApp->addAction(m_replaceAction);
+
    AQAction *runAction = new AQAction(this);
    runAction->setShortcut("F5");
    runAction->setText("Run Debug");
@@ -159,7 +176,6 @@ DevStudio::DevStudio()
    m_textEdit->setPreferredSize(AQPoint(640, 400));
    setCentralWidget(m_textEdit);
 
-
    m_projectView = new AQListView();
    setLeftSideBar(m_projectView);
    Connect<DevStudio>(m_projectView, "itemDoubleClicked", this, &DevStudio::onFileItemDoubleClicked);
@@ -177,6 +193,25 @@ DevStudio::DevStudio()
    m_positionLabel = new AQLabel();
    m_positionLabel->setText("Ln:    Col:    ");
    statusBar()->addPermanentWidget(m_positionLabel);
+
+   m_findWidget = new FindWidget(m_textEdit);
+   statusBar()->addWidget(m_findWidget);
+   Connect<FindWidget>(clearFindAction, "triggered", m_findWidget, &FindWidget::deactivate);
+   Connect<FindWidget>(m_findAction, "triggered", m_findWidget, &FindWidget::activateFind);
+   Connect<FindWidget>(m_replaceAction, "triggered", m_findWidget, &FindWidget::activateReplace);
+
+   AQAction *findNextAction = new AQAction(this);
+   findNextAction->setShortcut("F3");
+   findNextAction->setText("Find Next");
+   aqApp->addAction(findNextAction);
+   Connect<FindWidget>(findNextAction, "triggered", m_findWidget, &FindWidget::findNext);
+   
+   AQAction *findPrevAction = new AQAction(this);
+   findPrevAction->setShortcut("Shift+F3");
+   findPrevAction->setText("Find Previous");
+   aqApp->addAction(findPrevAction);
+   Connect<FindWidget>(findPrevAction, "triggered", m_findWidget, &FindWidget::findPrevious);
+   
    openProject("Work:devel/AQ");
 
    Connect<DevStudio>(aqApp, "readFinished", this, &DevStudio::onReadFinished);
@@ -204,6 +239,9 @@ DevStudio::DevStudio()
    editMenu->addAction(m_cutAction);
    editMenu->addAction(m_copyAction);
    editMenu->addAction(m_pasteAction);
+   editMenu->addSeparator();
+   editMenu->addAction(m_findAction);
+   editMenu->addAction(m_replaceAction);
    menubar->addMenu(editMenu);
 
    AQMenu *buildMenu = new AQMenu("Build");
@@ -437,6 +475,7 @@ void DevStudio::onBuildProject()
 void DevStudio::switchToDocument(DocInfo *newCurrent)
 {
    m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
+   m_currentDoc->m_findReplaceMode = m_findWidget->currentActiveMode();
 
    m_currentDoc = newCurrent;
 
@@ -445,6 +484,7 @@ void DevStudio::switchToDocument(DocInfo *newCurrent)
    m_textEdit->setFocus();
    onCursorPositionChanged(m_currentDoc->doc);
    onUndoRedoActionTextsChanged();
+   m_findWidget->setDocument(m_currentDoc->doc, m_currentDoc->cursor, m_currentDoc->m_findReplaceMode);
 }
 
 void DevStudio::onFileItemDoubleClicked(AQObject *obj)
@@ -590,4 +630,6 @@ void DevStudio::onPaste()
 
    m_textEdit->paste();
 }
+
+
 

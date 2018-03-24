@@ -16,6 +16,9 @@ public:
 
    AQTextDoc *document() const;
    void setDocument(AQTextDoc *doc, AQTextCursor *cursor);
+   AQTextCursor *mainCursor() const;
+
+
    AQScrollBar *verticalScrollBar() const;
 
    void setXOffset(int offX);
