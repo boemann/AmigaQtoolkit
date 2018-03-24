@@ -50,10 +50,14 @@ void AQAction::setShortcut(const AQString &sc)
    m_scAmiga = sc.contains("Amiga");
    m_scAlt = sc.contains("Alt");
    m_scShift = sc.contains("Shift");
-   if (sc[sc.size() - 2] == '+') {
+
+   m_scClass = IDCMP_VANILLAKEY;
+
+   if (sc[sc.size() - 2] == '+')
       m_scCode = tolower(sc[sc.size() - 1]);
-      m_scClass = IDCMP_VANILLAKEY;
-   } else {
+   else if (sc.contains("Esc"))
+      m_scCode = 27;
+   else {
       m_scClass = IDCMP_RAWKEY;
       if (sc.contains("F1"))
          m_scCode = AQWidget::Key_F1;
@@ -97,7 +101,6 @@ bool AQAction::matchShortcut(const IntuiMessage &msg)
       return false;
    if (!m_scCtrl != !(msg.Qualifier & IEQUALIFIER_CONTROL))
       return false;
-
 
    if (msg.Class == m_scClass) {
       ULONG code = m_scClass == IDCMP_VANILLAKEY ? tolower(msg.Code) : msg.Code;
