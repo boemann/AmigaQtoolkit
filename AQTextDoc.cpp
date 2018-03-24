@@ -642,7 +642,7 @@ AQTextDoc::~AQTextDoc()
 void AQTextDoc::loadFile(const AQString &fileName)
 {
    BPTR file =  Open(fileName, MODE_OLDFILE);
-   if (file == -1)
+   if (file == 0)
       return;
 
    FileInfoBlock *fib = (FileInfoBlock *)AllocDosObject(DOS_FIB, nullptr);
