@@ -177,7 +177,7 @@ AQString AQDialog::selectedPath() const
    if (!m_selectName)
       return p;
 
-   if (m_drawerIsSet)
+   if (m_drawerIsSet && m_drawerMode)
       p = qCdUp(p);
 
    if (p.endsWith(":") || p.isEmpty())
