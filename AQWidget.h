@@ -40,6 +40,8 @@ public:
 
    void setMenu(AQMenu *menu);
 
+   void setTooltip(const AQString &tooltip);
+
    void setWindowTitle(const AQString &title);
    void setWindowModality(int modal); // 0=not (default) 1 = application modal
    void setWindowFlags(UWORD flags); // see AQWindow.h for flags
@@ -178,6 +180,7 @@ private:
    bool m_enabled;
    bool m_visible;
    AQString m_title;
+   AQString m_tooltip;
 
    AQLayout *m_layout;
    vector<AQWidget *> m_children;

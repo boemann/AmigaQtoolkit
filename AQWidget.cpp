@@ -117,6 +117,12 @@ void AQWidget::setMenu(AQMenu *menu)
    m_menu->setParent(this);
 }
 
+void AQWidget::setTooltip(const AQString &tooltip)
+{
+   m_tooltip = tooltip;
+}
+
+
 void AQWidget::setWindowTitle(const AQString &title)
 {
    m_title = title;
