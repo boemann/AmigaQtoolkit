@@ -232,7 +232,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("right")) {
-      m_d->init(16, 8, 2);
+      m_d->init(8, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -251,7 +251,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("up")) {
-      m_d->init(16, 8, 2);
+      m_d->init(8, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -267,7 +267,7 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("down")) {
-      m_d->init(16, 8, 2);
+      m_d->init(8, 8, 2);
       SetRast(&m_d->rastPort, 0);
       
       SetAPen(&m_d->rastPort, 1);
@@ -283,32 +283,32 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("wholeword")) {
-      m_d->init(14, 8, 2);
+      m_d->init(12, 8, 2);
       char *bit[8] = {
-      "              ",
-      " 111111111111 ",
-      "  1111  11    ",
-      " 11  11 11    ",
-      " 111111 1111  ",
-      " 11  11 11 11 ",
-      " 11  11 1111  ",
-      " 111111111111 "};
-      convertFromChars(&m_d->rastPort, 14, bit);
+      "            ",
+      "111111111111",
+      " 1111  11   ",
+      "11  11 11   ",
+      "111111 1111 ",
+      "11  11 11 11",
+      "11  11 1111 ",
+      "111111111111"};
+      convertFromChars(&m_d->rastPort, 12, bit);
 
       m_d->genMask();
    }
    if (fileName == AQString("matchcase")) {
-      m_d->init(14, 8, 2);
+      m_d->init(13, 8, 2);
       char *bit[8] = {
-      "              ",
-      "  1111        ",
-      " 11  11       ",
-      " 11  11  1111 ",
-      " 111111     11",
-      " 11  11  11111",
-      " 11  11 11  11",
-      " 11  11  11111"};
-      convertFromChars(&m_d->rastPort, 14, bit);
+      "             ",
+      " 1111        ",
+      "11  11       ",
+      "11  11  1111 ",
+      "111111     11",
+      "11  11  11111",
+      "11  11 11  11",
+      "11  11  11111"};
+      convertFromChars(&m_d->rastPort, 13, bit);
 
       m_d->genMask();
    }
@@ -358,17 +358,17 @@ AQIcon::AQIcon(const AQString &fileName)
       m_d->genMask();
    }
    if (fileName == AQString("ctrlkey")) {
-      m_d->init(19, 8, 2);
+      m_d->init(18, 8, 2);
       char *bit[8] = {
-      "                   ",
-      " 11   11  11111 1  ",
-      "1  1 1  1   1   1  ",
-      "1    1111   1   1  ",
-      "1    11     1   1  ",
-      "1  1 1 1    1   1  ",
-      " 11  1  1   1   111" ,
-      "                   ",};
-      convertFromChars(&m_d->rastPort, 19, bit);
+      "                  ",
+      " 11 11111 1111 1  ",
+      "1  1  1   1  1 1  ",
+      "1     1   1111 1  ",
+      "1     1   11   1  ",
+      "1  1  1   1 1  1  ",
+      " 11   1   1  1 111" ,
+      "                  ",};
+      convertFromChars(&m_d->rastPort, 18, bit);
 
       m_d->genMask();
    }
