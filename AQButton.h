@@ -23,6 +23,7 @@ protected:
    virtual bool mouseReleaseEvent(const IntuiMessage &msg);
 
 private:
+   void recalcSizes();
    AQString m_text;
    AQIcon m_icon;
    bool m_pressed;

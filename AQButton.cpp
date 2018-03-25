@@ -14,13 +14,8 @@ AQButton::AQButton(bool toolMode, AQWidget *parent)
    setBgPen(-1); // no bg but we draw ourself
 
    setExpanding(false, false);
-   if (m_toolMode) {
-      setMinimumSize(AQPoint(20, 11));
-      setPreferredSize(AQPoint(20, 11));
-   } else {
-      setMinimumSize(AQPoint(60, 11));
-      setPreferredSize(AQPoint(60, 11));
-   }
+
+   recalcSizes();
 }
 
 AQButton::~AQButton()
@@ -34,17 +29,32 @@ void AQButton::setCheckable(bool c)
 
 void AQButton::setText(const AQString &text)
 {
-   RastPort rp;
-   InitRastPort(&rp);
-   setMinimumSize(AQPoint(TextLength(&rp, text, text.size()) + 20, 11));
-   setPreferredSize(minimumSize());
-
    m_text = text;
+
+   recalcSizes();
 }
 
 void AQButton::setIcon(const AQIcon &icon)
 {
    m_icon = icon;
+
+   recalcSizes();
+}
+
+void AQButton::recalcSizes()
+{
+   RastPort rp;
+   InitRastPort(&rp);
+   int w = m_icon.isNull() ? 0 : m_icon.size().x;
+   if (!m_text.isEmpty())
+      w += TextLength(&rp, m_text, m_text.size());
+
+   if (m_toolMode)
+      setMinimumSize(AQPoint(w + 4, 11));
+   else
+      setMinimumSize(AQPoint(w + 20, 11));
+
+   setPreferredSize(minimumSize());
 }
 
 void AQButton::enterEvent()
