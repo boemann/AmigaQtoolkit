@@ -2,13 +2,8 @@
 
 #include <graphics/gfxbase.h>
 
-#ifdef __GNUC__
 #include <proto/graphics.h>
 #include <proto/layers.h>
-#else
-#include <pragma/graphics_lib.h>
-#include <pragma/layers_lib.h>
-#endif
 
 #include <AQTextDoc.h>
 #include <AQScrollBar.h>
@@ -159,12 +154,12 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
       RectFill(rp, right, 0, right+2, bottom);
    }
 
-   pushClipRect(rp, clipRect);
-
    SetAPen(rp, SHADOW);
    Move(rp, right, 0);
    Draw(rp, 0, 0);
    Draw(rp, 0, bottom);
+
+   pushClipRect(rp, clipRect);
 
    AQPoint docOffset(0,0);
    if (m_scrollBar)
