@@ -23,6 +23,12 @@ AQString AQLineEdit::text() const
    return document()->toString();
 }
 
+void AQLineEdit::setText(const AQString &text)
+{
+   document()->setData(text);
+   update();
+}
+
 bool AQLineEdit::keyEvent(const IntuiMessage &msg)
 {
    if(msg.Class ==IDCMP_RAWKEY) {

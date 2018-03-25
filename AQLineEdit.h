@@ -11,6 +11,7 @@ public:
    ~AQLineEdit();
 
    AQString text() const;
+   void setText(const AQString &text);
 
 protected:
    virtual bool keyEvent(const IntuiMessage &msg);
