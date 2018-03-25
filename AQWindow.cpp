@@ -327,6 +327,9 @@ void AQWindow::event(IntuiMessage &msg)
 
 void AQWindow::paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg)
 {
+   if (!w->m_visible)
+      return;
+
    AQRect clip(rect.intersected(w->geometry()));
 
    if (!clip.isValid()) // nothing to paint for this widget within cliprect

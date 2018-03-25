@@ -90,7 +90,11 @@ bool AQWidget::isVisible() const
 
 void AQWidget::setVisible(bool visible)
 {
-   m_visible = visible;
+   if (m_visible != visible) {
+      m_visible = visible;
+      updateGeometry();
+   } else
+      m_visible = visible;
 
    if (visible) {
       if (isTopLevel() && m_window == nullptr)

@@ -16,6 +16,7 @@ class AQWindow;
 class AQLayout;
 class AQAction;
 class AQMenu;
+class AQLayoutItem;
 
 class AQWidget : public AQObject
 {
@@ -146,6 +147,7 @@ public:
 
    friend class AQWindow;
    friend class AQApplication;
+   friend class AQLayoutItem;
 
 protected:
    virtual bool event(IntuiMessage &msg);

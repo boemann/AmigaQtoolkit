@@ -48,8 +48,14 @@ AQPoint AQLayout::minimumSize() const
       return m_cachedMin;
 
    AQPoint s;
+   int contributeCount = 0;
+
    for (int i = 0; i < m_items.size(); ++i) {
-      AQPoint itemMin = m_items[i]->minimumSize(); 
+      if (!m_items[i]->contributes())
+         continue;
+      AQPoint itemMin = m_items[i]->minimumSize();
+
+      ++contributeCount;
       if (m_horiz) {
          s.x += itemMin.x;
          if (itemMin.y > s.y)
@@ -63,9 +69,9 @@ AQPoint AQLayout::minimumSize() const
    }
 
    if (m_horiz)
-      s.x += (m_items.size() - 1) * m_spacing.x;
+      s.x += (contributeCount - 1) * m_spacing.x;
    else
-      s.y += (m_items.size() - 1) * m_spacing.y;
+      s.y += (contributeCount - 1) * m_spacing.y;
 
    const_cast<AQLayout *>(this)->m_cachedMin = s;
    const_cast<AQLayout *>(this)->m_hasCachedMin = true;
@@ -78,24 +84,31 @@ AQPoint AQLayout::preferredSize() const
       return m_cachedPref;
 
    AQPoint s;
-      
-   if (m_horiz) {
-      s.x = (m_items.size() - 1)* m_spacing.x;
-      for (int i = 0; i < m_items.size(); ++i) {
-         AQPoint itemPref = m_items[i]->preferredSize();
+   int contributeCount = 0;
+
+   for (int i = 0; i < m_items.size(); ++i) {
+      if (!m_items[i]->contributes())
+         continue;
+      AQPoint itemPref = m_items[i]->preferredSize();
+
+      ++contributeCount;
+      if (m_horiz) {
          s.x += itemPref.x;
          if (itemPref.y > s.y)
             s.y = itemPref.y;
       }
-   } else {
-      s.y = (m_items.size() - 1)* m_spacing.y;
-      for (int i = 0; i < m_items.size(); ++i) {
-         AQPoint itemPref = m_items[i]->preferredSize();
+      else { 
          s.y += itemPref.y;
          if (itemPref.x > s.x)
             s.x = itemPref.x;
       }  
    }
+
+   if (m_horiz)
+      s.x += (contributeCount - 1) * m_spacing.x;
+   else
+      s.y += (contributeCount - 1) * m_spacing.y;
+
 
    const_cast<AQLayout *>(this)->m_cachedPref = s;
    const_cast<AQLayout *>(this)->m_hasCachedPref = true;
@@ -111,6 +124,8 @@ bool AQLayout::likeToExpandX() const
 
    if (m_horiz) {
       for (int i = 0; i < m_items.size(); ++i) {
+         if (!m_items[i]->contributes())
+            continue;
          if (m_items[i]->likeToExpandX()) {
             const_cast<AQLayout *>(this)->m_cachedExpandX = true;
             return true;
@@ -120,6 +135,8 @@ bool AQLayout::likeToExpandX() const
       return false;
    } else { 
       for (int i = 0; i < m_items.size(); ++i) {
+         if (!m_items[i]->contributes())
+            continue;
          if (!m_items[i]->likeToExpandX()) {
             const_cast<AQLayout *>(this)->m_cachedExpandX = false;
             return false;
@@ -139,6 +156,8 @@ bool AQLayout::likeToExpandY() const
 
    if (m_horiz) {
       for (int i = 0; i < m_items.size(); ++i) {
+         if (!m_items[i]->contributes())
+            continue;
          if (!m_items[i]->likeToExpandY()) {
             const_cast<AQLayout *>(this)->m_cachedExpandY = false;
             return false;
@@ -148,6 +167,8 @@ bool AQLayout::likeToExpandY() const
       return true;
    } else {
       for (int i = 0; i < m_items.size(); ++i) {
+         if (!m_items[i]->contributes())
+            continue;
          if (m_items[i]->likeToExpandY()) {
             const_cast<AQLayout *>(this)->m_cachedExpandY = true;
             return true;
@@ -191,7 +212,13 @@ void AQLayout::layout(const AQPoint &size)
    WORD expandShare = 0;
    WORD askedShare = 0;
 
-   if (m_items.size() == 0)
+   int numContribs = 0;
+   for (int i = 0; i < m_items.size(); ++i) {
+      if (m_items[i]->contributes())
+         ++numContribs;
+   }
+
+   if (numContribs == 0)
       return;
    
    if (m_valid && m_currentSize == size) {
@@ -213,9 +240,11 @@ void AQLayout::layout(const AQPoint &size)
       WORD sumSpace = (m_items.size() - 1)* m_spacing.x;
       if (totalMin.x > size.x) {
          // this is the rude case where we need to harm the items
-         askedShare = (totalMin.x - size.x) / m_items.size();
+         askedShare = (totalMin.x - size.x) / numContribs;
          for (int i = 0; i < m_items.size(); ++i) {
             AQLayoutItem *item = m_items[i];
+            if (!item->contributes())
+               continue;
             AQPoint itemSize = item->minimumSize();
       
             itemSize.x -= askedShare;
@@ -236,13 +265,15 @@ void AQLayout::layout(const AQPoint &size)
          WORD distribute = totalPreferred.x - size.x;
          WORD askCorrection = 0;
          WORD remainingGivers;
-         askedShare = distribute / m_items.size();
+         askedShare = distribute / numContribs;
          do {
             askedShare += askCorrection;
             distribute = totalPreferred.x - size.x;
-            remainingGivers = m_items.size();
+            remainingGivers = numContribs;
 
             for (int i = 0; i < m_items.size(); ++i) {
+               if (!m_items[i]->contributes())
+                  continue;
                WORD maxShare = m_items[i]->preferredSize().x - m_items[i]->minimumSize().x;
                if (maxShare < askedShare) {
                   --remainingGivers;
@@ -259,6 +290,8 @@ void AQLayout::layout(const AQPoint &size)
          WORD expandCount = 0;
          // This is the case where we can expand
          for (int i = 0; i < m_items.size(); ++i) {
+            if (!m_items[i]->contributes())
+               continue;
             if ( m_items[i]->likeToExpandX())
                ++expandCount;
          }
@@ -270,6 +303,8 @@ void AQLayout::layout(const AQPoint &size)
       // Time to assign
       for (int i = 0; i < m_items.size(); ++i) {
          AQLayoutItem *item = m_items[i];
+         if (!item->contributes())
+            continue;
          AQPoint itemSize = item->preferredSize();
       
          // Make sure we don't go below minimum
@@ -294,12 +329,14 @@ void AQLayout::layout(const AQPoint &size)
          itemPos.x += itemSize.x + m_spacing.x;
       }
    } else { // VERTICAL
-      WORD sumSpace = (m_items.size() - 1)* m_spacing.y;
+      WORD sumSpace = (numContribs - 1)* m_spacing.y;
       if (totalMin.y > size.y) {
          // this is the rude case where we need to harm the items
-         askedShare = (totalMin.y - size.y) / m_items.size();
+         askedShare = (totalMin.y - size.y) / numContribs;
          for (int i = 0; i < m_items.size(); ++i) {
             AQLayoutItem *item = m_items[i];
+            if (!item->contributes())
+               continue;
             AQPoint itemSize = item->minimumSize();
       
             itemSize.y -= askedShare;
@@ -320,13 +357,15 @@ void AQLayout::layout(const AQPoint &size)
          WORD distribute = totalPreferred.y - size.y;
          WORD askCorrection = 0;
          WORD remainingGivers;
-         askedShare = distribute / m_items.size();
+         askedShare = distribute / numContribs;
          do {
             askedShare += askCorrection;
             distribute = totalPreferred.y - size.y;
-            remainingGivers = m_items.size();
+            remainingGivers = numContribs;
 
             for (int i = 0; i < m_items.size(); ++i) {
+               if (!m_items[i]->contributes())
+                  continue;
                WORD maxShare = m_items[i]->preferredSize().y - m_items[i]->minimumSize().y;
                if (maxShare < askedShare) {
                   --remainingGivers;
@@ -343,6 +382,8 @@ void AQLayout::layout(const AQPoint &size)
          WORD expandCount = 0;
          // This is the case where we can expand
          for (int i = 0; i < m_items.size(); ++i) {
+            if (!m_items[i]->contributes())
+               continue;
             if (m_items[i]->likeToExpandY())
                ++expandCount;
          }
@@ -354,6 +395,8 @@ void AQLayout::layout(const AQPoint &size)
       // Time to assign
       for (int i = 0; i < m_items.size(); ++i) {
          AQLayoutItem *item = m_items[i];
+         if (!m_items[i]->contributes())
+            continue;
          AQPoint itemSize = item->preferredSize();
       
          // Make sure we don't go below minimum

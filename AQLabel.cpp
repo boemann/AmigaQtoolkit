@@ -24,16 +24,20 @@ AQLabel::~AQLabel()
 {
 }
 
-void AQLabel::setText(const AQString &text)
+void AQLabel::setText(const AQString &text, bool updateSize)
 {
-   RastPort rp;
-   InitRastPort(&rp);
-   setMinimumSize(AQPoint(TextLength(&rp, text, text.size()), 11));
-   setPreferredSize(minimumSize());
-
    m_text = text;
-   
-   update();
+
+   if (updateSize) {
+      RastPort rp;
+      InitRastPort(&rp);
+
+      setMinimumSize(AQPoint(TextLength(&rp, text, text.size()), 11));
+      setPreferredSize(minimumSize());
+
+      updateGeometry();
+   } else
+      update();
 }
 
 void AQLabel::setIcon(const AQIcon &icon)

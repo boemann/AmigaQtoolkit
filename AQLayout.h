@@ -18,6 +18,7 @@ public:
    virtual bool likeToExpandY() const {return m_widget->likeToExpandY();}
    virtual void setPos(const AQPoint &pos) {m_widget->setPos(pos); }
    virtual AQPoint pos() const { return m_widget->pos(); }
+   virtual bool contributes() const {return m_widget->m_visible; }
 
 private:
    AQWidget *m_widget;
@@ -35,6 +36,7 @@ public:
    bool likeToExpandY() const {return m_expY;}
    void setPos(const AQPoint &pos) { m_pos = pos;}
    AQPoint pos() const { return m_pos; }
+   bool contributes() const {return true; }
 
 private:
    AQPoint m_size;
@@ -59,6 +61,7 @@ public:
    void layout(const AQPoint &size);
    void setPos(const AQPoint &pos);
    AQPoint pos() const;
+   bool contributes() const {return true; }
 
    bool likeToExpandX() const;
    bool likeToExpandY() const;

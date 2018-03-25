@@ -10,7 +10,7 @@ public:
    AQLabel(AQWidget *parent = nullptr);
    ~AQLabel();
 
-   void setText(const AQString &text);
+   void setText(const AQString &text, bool updateSize = true);
    void setIcon(const AQIcon &icon);
 
 protected:

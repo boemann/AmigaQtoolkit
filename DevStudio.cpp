@@ -484,7 +484,7 @@ void DevStudio::onCursorPositionChanged(AQObject *obj)
          t += AQString::number(1 + doc->blockNumber(cursor->position()));
          t += " Col: ";
          t += AQString::number(1 + cursor->positionInBlock());
-         m_positionLabel->setText(t);
+         m_positionLabel->setText(t, false);
          return;
       }
       it++;

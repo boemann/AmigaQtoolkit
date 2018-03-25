@@ -25,7 +25,6 @@ void AQStatusBar::addWidget(AQWidget *w)
 {
    w->setParent(this);
    m_normLayout->addWidget(w);
-   layout()->invalidate();
    w->updateGeometry();
 }
 
@@ -33,6 +32,5 @@ void AQStatusBar::addPermanentWidget(AQWidget *w)
 {
    w->setParent(this);
    m_permanentLayout->addWidget(w);
-   layout()->invalidate();
    w->updateGeometry();
 }
