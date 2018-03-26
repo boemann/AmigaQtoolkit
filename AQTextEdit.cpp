@@ -50,6 +50,8 @@ AQTextEdit::AQTextEdit(AQWidget *parent, bool withScroll)
       m_scrollBar->setSingleStep(7);
       m_scrollBar->setWheelStep(3*7);
    }
+
+   Connect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
 }
 
 AQTextEdit::~AQTextEdit()
@@ -63,10 +65,12 @@ AQTextDoc *AQTextEdit::document() const
 
 void AQTextEdit::setDocument(AQTextDoc *doc, AQTextCursor *cursor)
 {
+   Disconnect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
    m_doc = doc;
    m_cursor = cursor;
    if (m_scrollBar)
       m_scrollBar->setMaximum(m_doc->height());
+   Connect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
    update();
 }
 
@@ -75,7 +79,7 @@ AQScrollBar *AQTextEdit::verticalScrollBar() const
    return m_scrollBar;
 }
 
-void AQTextEdit::scrollUpdate(int v)
+void AQTextEdit::scrollUpdate(int delta)
 {
    AQRect area(2, 2, size().x - 4, size().y - 4);
 
@@ -86,12 +90,14 @@ void AQTextEdit::scrollUpdate(int v)
 
    area.bottomRight.x -= m_scrollBar->size().x + 2;
 
-   int offBefore = (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
-   int offAfter = (v / m_doc->lineHeight()) * m_doc->lineHeight();
+   int offBefore = ((m_scrollBar->value() - delta)/ m_doc->lineHeight()) * m_doc->lineHeight();
+   int offAfter = (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
 
    int dy = offAfter - offBefore;
 
-   scroll(AQPoint(0, dy), area);
+   scroll(AQPoint(0, dy), area); // also serves pending updates
+
+   m_docOffset.y = offAfter; // now it is safe
 
    if (dy < 0)
       update(AQRect(AQPoint(2, area.bottomRight.y-10), area.bottomRight));
@@ -116,19 +122,19 @@ void AQTextEdit::paste()
    update();
 }
 
-void AQTextEdit::ensureCursorVisible()
+void AQTextEdit::ensureCursorVisible(EnsureType type)
 {
    if (!m_scrollBar)
       return;
 
    LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
 
-   int v = m_scrollBar->value();
+   int v = m_docOffset.y;
 
    if (v > y)
       v = y;
    y += m_doc->lineHeight();
-   y -= size().y - 4;
+   y -= size().y - 4 - m_doc->lineHeight();
    if (v < y)
       v = y;
 
@@ -161,21 +167,18 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
 
    pushClipRect(rp, clipRect);
 
-   AQPoint docOffset(0,0);
-   if (m_scrollBar)
-      docOffset.y = (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
-
    ScrollLayer(0, rp->Layer, -2, -2); //offset painting in widget
 
-   m_doc->render(rp, docOffset, AQPoint(right-4, bottom-4));
+   m_doc->render(rp, m_docOffset, AQPoint(right-4, bottom-4));
 
    if (hasFocus() && !m_cursor->hasSelection()) {
       SetAPen(rp, 3);
       LONG x = m_cursor->positionInBlock() * rp->TxWidth-1;
       LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
-      x -= docOffset.x;
-      y -= docOffset.y;
-      RectFill(rp, x, y, x + 1, y + m_doc->lineHeight());
+      x -= m_docOffset.x;
+      y -= m_docOffset.y;
+      if (y + m_doc->lineHeight() <= bottom - 3)
+         RectFill(rp, x, y, x + 1, y + m_doc->lineHeight());
    }
 
    ScrollLayer(0, rp->Layer, 2, 2); // restore offset
@@ -192,10 +195,6 @@ bool AQTextEdit::wheelEvent(bool up)
 
 AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
 {   
-   AQPoint docOffset(0,0);
-   if (m_scrollBar)
-      docOffset.y = (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
-
    if (fullLineWidth || m_cursor->hasSelection()) {
       LONG top = m_doc->blockNumber(m_cursor->selectionStart()) * m_doc->lineHeight();
       LONG bottom = (m_doc->blockNumber(m_cursor->selectionEnd()) + 1) 
@@ -206,13 +205,13 @@ AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
       if (m_scrollBar)
          right -= m_scrollBar->size().x + 2;
 
-      return AQRect(2, top - docOffset.y + 2, right, bottom - top);
+      return AQRect(2, top - m_docOffset.y + 2, right, bottom - top);
    }
 
    LONG x = m_cursor->positionInBlock() * 6 - 1;
    LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
-   x -= docOffset.x;
-   y -= docOffset.y;
+   x -= m_docOffset.x;
+   y -= m_docOffset.y;
    x += 2; // we have a frame around the actual doc
    y += 2;
 
@@ -222,6 +221,7 @@ AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
 bool AQTextEdit::keyEvent(const IntuiMessage &msg)
 {
    AQRect cursorPreRect = cursorRect();
+   bool hadSelection = m_cursor->hasSelection();
 
    if (msg.Class ==IDCMP_RAWKEY) {
       switch (msg.Code) {
@@ -261,14 +261,14 @@ bool AQTextEdit::keyEvent(const IntuiMessage &msg)
          m_cursor->insertBlock();
          update();
       } else if (msg.Code == 0x08) { // backspace
-         if (m_cursor->positionInBlock() == 0)
+         if (hadSelection || m_cursor->positionInBlock() == 0)
             update();
          else
             update(cursorRect(true));
          m_cursor->deleteLeft();
       } else if (msg.Code == 0x7F) { // delete
          m_cursor->deleteRight();
-         if (m_cursor->positionInBlock() == 0)
+         if (hadSelection || m_cursor->positionInBlock() == 0)
             update();
          else
             update(cursorRect(true));
@@ -278,10 +278,11 @@ bool AQTextEdit::keyEvent(const IntuiMessage &msg)
          cstr[1] = 0;
          AQString str(cstr);
          m_cursor->insertText(str);
-         update(cursorRect(true));
+         if (hadSelection)
+            update();
+         else
+            update(cursorRect(true));
       }
-      if (m_scrollBar)
-         m_scrollBar->setMaximum(m_doc->height());
    }
 
    update(cursorPreRect);
@@ -318,10 +319,9 @@ bool AQTextEdit::mousePressEvent(const IntuiMessage &msg)
    AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
 
    if (m_scrollBar)
-      clickPoint.y += (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
+      clickPoint.y += m_docOffset.y;
 
-   int pos = m_doc->positionOfPoint(clickPoint);
-   
+   int pos = m_doc->positionOfPoint(clickPoint);   
 
    if (msg.Code == MENUDOWN) {
       if (pos < m_cursor->selectionStart() || pos > m_cursor->selectionEnd())
@@ -344,7 +344,7 @@ bool AQTextEdit::mouseMoveEvent(const IntuiMessage &msg)
 {
    AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
    if (m_scrollBar)
-      clickPoint.y += (m_scrollBar->value() / m_doc->lineHeight()) * m_doc->lineHeight();
+      clickPoint.y += m_docOffset.y;
 
    int pos = m_doc->positionOfPoint(clickPoint);
    
@@ -369,3 +369,9 @@ void AQTextEdit::resizeEvent(const AQPoint &oldSize)
    }
 }
 
+void AQTextEdit::onDocumentChanged(AQObject *obj)
+{
+   if (m_scrollBar)
+      m_scrollBar->setMaximum(m_doc->height());
+}
+   void onDocumentChanged(AQObject *obj);

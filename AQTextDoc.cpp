@@ -114,12 +114,14 @@ public:
    {
       m_doc->deleteData(m_pos, m_n, false);
       m_doc->restoreUndoneStateToCursors(this);
+      m_doc->emit("documentChanged", m_doc);
    }
 
    void redo()
    {
       m_doc->pushData(m_pos, m_n, m_data, false);
       m_doc->restoreDoneStateToCursors(this);
+      m_doc->emit("documentChanged", m_doc);
    }
 
    AQTextDoc *m_doc;
@@ -216,6 +218,7 @@ public:
 
       m_doc->pushData(m_pos, m_n, m_data, false);
       m_doc->restoreUndoneStateToCursors(this);
+      m_doc->emit("documentChanged", m_doc);
    }
 
    void redo()
@@ -225,6 +228,7 @@ public:
 
       if (m_mergedInsert)
          m_mergedInsert->redo();
+      m_doc->emit("documentChanged", m_doc);
    }
 
    AQTextDoc *m_doc;
@@ -253,6 +257,9 @@ void AQTextCursor::insertText(const AQString &str)
    int addLen = str.size();
 
    m_doc.pushData(m_state.pos, addLen, str);
+
+   m_doc.emit("documentChanged", &m_doc);
+   m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
 void AQTextCursor::insertBlock()
@@ -261,7 +268,10 @@ void AQTextCursor::insertBlock()
       deleteSelection();
 
    m_doc.pushData(m_state.pos, 1, "\n");
-}  
+
+   m_doc.emit("documentChanged", &m_doc);
+   m_doc.emit("cursorPositionChanged", &m_doc);
+}
 
 int AQTextCursor::position() const
 {
@@ -344,6 +354,7 @@ void AQTextCursor::deleteLeft()
    if (m_state.pos)
       m_doc.deleteData(m_state.pos-1, 1);
 
+   m_doc.emit("documentChanged", &m_doc);
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
@@ -357,6 +368,7 @@ void AQTextCursor::deleteRight()
    if (m_doc.m_size > m_state.pos)
       m_doc.deleteData(m_state.pos, 1);
 
+   m_doc.emit("documentChanged", &m_doc);
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
@@ -375,6 +387,7 @@ void AQTextCursor::deleteSelection()
       return;
    m_doc.deleteData(pos, n);
 
+   m_doc.emit("documentChanged", &m_doc);
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
@@ -660,7 +673,8 @@ void AQTextDoc::loadFile(const AQString &fileName)
    }
    Close(file);
    updateBlocks();
-}
+
+   emit("documentChanged", this);}
 
 bool AQTextDoc::saveFile(const AQString &fileName) const
 {
@@ -686,6 +700,8 @@ void AQTextDoc::setData(const AQString &text)
       m_data[m_size] = 0; // make sure we are null terminated
    }
    updateBlocks();
+
+   emit("documentChanged", this);
 }
 
 AQString AQTextDoc::toString() const

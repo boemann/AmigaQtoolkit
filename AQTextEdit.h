@@ -22,7 +22,14 @@ public:
    void setYOffset(int ooXY);
 
    void scrollUpdate(int v);
-   void ensureCursorVisible();
+
+   enum EnsureType {
+      Nearest,
+      AtTop,  //not implemented yet
+      MiddleHalf,  //not implemented yet
+      AtBottom  //not implemented yet
+   };
+   void ensureCursorVisible(EnsureType type = Nearest);
 
    void cut();
    void copy();
@@ -39,12 +46,15 @@ protected:
    virtual bool mouseMoveEvent(const IntuiMessage &msg);
    virtual bool mouseReleaseEvent(const IntuiMessage &msg);
    virtual void resizeEvent(const AQPoint &oldSize);
- 
+
+   void onDocumentChanged(AQObject *obj);
+
 private:
    AQRect cursorRect(bool fullLineWidth = false) const;
 
    AQTextDoc *m_doc;
    AQTextCursor *m_cursor;
+   AQPoint m_docOffset;
    bool m_ownsDoc;
    AQScrollBar *m_scrollBar;
    AQAction *m_cutAction;

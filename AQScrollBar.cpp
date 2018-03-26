@@ -59,8 +59,10 @@ void AQScrollBar::setValue(int v)
    if (m_value == v)
       return;
 
-   emit("valueChanged", v);
+   int delta = v - m_value;
    m_value = v;
+
+   emit("valueChanged", delta);
    calculateKnob();
    update();
 }

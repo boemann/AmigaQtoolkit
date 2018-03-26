@@ -317,7 +317,7 @@ vector<AQListItem *> AQListView::selectedItems() const
    return res;
 }
 
-void AQListView::scrollUpdate(int v)
+void AQListView::scrollUpdate(int delta)
 {
    update();
 }
