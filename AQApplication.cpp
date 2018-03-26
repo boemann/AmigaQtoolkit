@@ -72,6 +72,11 @@ void ConnectionBase::registerConnection(AQObject *sender, ConnectionBase *c)
    sender->registerConnection(c);
 }
 
+void ConnectionBase::unregisterConnection(AQObject *sender, const ConnectionBase &c)
+{
+   sender->unregisterConnection(c);
+}
+
 AQObject::AQObject(AQObject *parent)
 {
    if (parent)
@@ -127,6 +132,18 @@ void AQObject::emit(const AQString &signalName, AQObject *arg) {
 void AQObject::registerConnection(ConnectionBase *cb)
 {
    m_connections.push_back(cb);
+}
+
+void AQObject::unregisterConnection(const ConnectionBase &cb)
+{
+   for (int i= 0; i < m_connections.size(); ++i) {
+      ConnectionBase *toremove = m_connections[i];
+      if (toremove->isEqual(cb)) {
+         m_connections.erase(std::remove(m_connections.begin(), m_connections.end(), toremove) , m_connections.end());
+         delete toremove;
+         return;
+      }
+   }
 }
 
 AQScreen::AQScreen()
