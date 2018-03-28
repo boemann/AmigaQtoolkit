@@ -119,7 +119,7 @@ DevStudio::DevStudio()
 
    m_copyAction = new AQAction(this);
    m_copyAction->setShortcut("Amiga+C");
-   m_copyAction->setText("Cut");
+   m_copyAction->setText("Copy");
    Connect<DevStudio>(m_copyAction, "triggered", this, &DevStudio::onCopy);
    aqApp->addAction(m_copyAction);
 
