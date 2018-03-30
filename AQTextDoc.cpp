@@ -685,8 +685,8 @@ AQTextDoc::AQTextDoc(AQObject *parent)
    : AQObject(parent)
    , m_data(nullptr)
    , m_size(0)
-   , m_lineHeight(7)
    , m_latestCommand(nullptr)
+   , m_defaultFont(GfxBase->DefaultFont)
 {
    m_capacity = 1000;
    m_data = new char[m_capacity];
@@ -756,6 +756,11 @@ void AQTextDoc::setData(const AQString &text)
    emit("documentChanged", this);
 }
 
+void AQTextDoc::setDefaultFont(TextFont *font)
+{
+   m_defaultFont = font;
+}
+
 AQString AQTextDoc::toString() const
 {
    return AQString(m_data, m_size);
@@ -763,15 +768,14 @@ AQString AQTextDoc::toString() const
 
 void AQTextDoc::render(RastPort *rp, AQPoint docOffset, AQPoint botRight)
 {
-   m_lineHeight = rp->TxHeight;
-   m_charWidth = rp->TxWidth;
-
-   UWORD y = rp->TxBaseline;
    rp->DrawMode = JAM1;
 
+   TextFont *oldFont = rp->Font;
+   SetFont(rp, m_defaultFont);
+   m_charWidth = rp->TxWidth;
 
-   int b = docOffset.y / m_lineHeight;
-   y += b * m_lineHeight;
+   int b = docOffset.y / lineHeight();
+   UWORD y = rp->TxBaseline + b * lineHeight();
    while (b < m_numBlocks) {
       // first draw the plain Line
       SetAPen(rp, 1);
@@ -802,7 +806,7 @@ void AQTextDoc::render(RastPort *rp, AQPoint docOffset, AQPoint botRight)
                   extra = rp->TxWidth;
                } else
                   len = selEnd - selStart;
-               int x = (selStart - thisLineStart) * rp->TxWidth - docOffset.x;
+               int x = TextLength(rp, m_blocks[b].m_pos + m_data,(selStart - thisLineStart)) - docOffset.x;
 
                SetDrMd(rp, JAM2);
                SetAPen(rp, i>0 ? 1 : 2);
@@ -811,19 +815,41 @@ void AQTextDoc::render(RastPort *rp, AQPoint docOffset, AQPoint botRight)
                Text(rp, m_data + selStart, len);
                if (extra > 0) {
                   SetAPen(rp, 3);
-                  x += len * rp->TxWidth;
+                  x += TextLength(rp, m_data + selStart, len);
                   int tmpY = y - docOffset.y - rp->TxBaseline;
                   RectFill(rp, x, tmpY, x + extra - 1, tmpY + rp->TxHeight - 1);
                }
             }   
          }
       }
-      y += m_lineHeight;
+      y += lineHeight();
       if (y - docOffset.y >= botRight.y)
          break;
       ++b;
    }
+
+   SetFont(rp, oldFont);
 } 
+
+void AQTextDoc::renderCursor(RastPort *rp, AQTextCursor *cursor,
+                     AQPoint docOffset, AQPoint botRight)
+{
+   if (!cursor->hasSelection()) {
+      TextFont *oldFont = rp->Font;
+      SetFont(rp, m_defaultFont);
+
+      SetAPen(rp, 3);
+      int linestart = cursor->position() - cursor->positionInBlock();
+      LONG x = TextLength(rp, m_data + linestart, cursor->positionInBlock())-1;
+      LONG y = blockNumber(cursor->position()) * lineHeight();
+      x -= docOffset.x;
+      y -= docOffset.y;
+      if (y + lineHeight() <= botRight.y + 1)
+         RectFill(rp, x, y, x + 1, y + lineHeight());
+
+      SetFont(rp, oldFont);
+   }
+}
 
 AQCommand *AQTextDoc::takeLatestCommand()
 {
@@ -844,12 +870,12 @@ void AQTextDoc::setLatestCommand(AQCommand *cmd)
 
 int AQTextDoc::height() const
 {
-   return m_numBlocks * m_lineHeight;
+   return m_numBlocks * lineHeight();
 }
 
 int AQTextDoc::lineHeight() const
 {
-   return m_lineHeight;
+   return m_defaultFont->tf_YSize;
 }
 
 int AQTextDoc::blockNumber(int pos)
@@ -1072,15 +1098,37 @@ int AQTextDoc::positionOfPoint(const AQPoint &p) const
    if (p.y < 0)
       return 0;
 
-   int b = p.y / m_lineHeight;
-   int posInBlock = (p.x + m_charWidth/2 + 1) / m_charWidth;
-
+   int b = p.y / lineHeight();
    if (b > m_numBlocks)
       return m_size - 1;
 
-   int pos = m_blocks[b].m_pos;
-   if (posInBlock >= m_blocks[b+1].m_pos - pos)
-      posInBlock = m_blocks[b+1].m_pos - pos - 1;
+   RastPort rp;
+   InitRastPort(&rp);
+   SetFont(&rp, m_defaultFont);
 
+   int pos = m_blocks[b].m_pos;
+   int lowpos = 0;
+   int highpos = m_blocks[b+1].m_pos - pos -1;
+
+   char *d = m_data +pos;
+   int posInBlock;
+   int testX;
+   do {
+      posInBlock = (highpos + lowpos) / 2;
+      testX = TextLength(&rp, d, posInBlock);
+      if (testX < p.x)
+         lowpos = posInBlock;
+      else
+         highpos = posInBlock;
+   } while (highpos - lowpos > 1);
+
+   if (posInBlock == lowpos) {
+      if ((TextLength(&rp, d, highpos) + testX +1) / 2 < p.x)
+         posInBlock = highpos;
+   } else {
+      if ((testX + TextLength(&rp, d, lowpos)+1) / 2 > p.x)
+         posInBlock = lowpos;
+   }
+   
    return pos + posInBlock;
 }

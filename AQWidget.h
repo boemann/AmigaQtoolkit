@@ -46,7 +46,7 @@ public:
    void setWindowTitle(const AQString &title);
    void setWindowModality(int modal); // 0=not (default) 1 = application modal
    void setWindowFlags(UWORD flags); // see AQWindow.h for flags
-   int fontHeight() const;
+   TextFont *font() const;
    void grabMouse();
    void releaseMouse();
 

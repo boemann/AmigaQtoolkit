@@ -9,9 +9,11 @@
 AQLineEdit::AQLineEdit(AQWidget *parent)
    : AQTextEdit(parent, false)
 {
-   setExpanding(true, true);
-   setMinimumSize(AQPoint(9, 11));
-   setPreferredSize(AQPoint(70, 11));
+   setExpanding(true, false);
+   setMinimumSize(AQPoint(9, 4 + font()->tf_YSize));
+   setPreferredSize(AQPoint(70, 4 + font()->tf_YSize));
+
+   document()->setDefaultFont(font());
 }
 
 AQLineEdit::~AQLineEdit()

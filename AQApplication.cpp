@@ -179,6 +179,10 @@ AQPoint AQScreen::menubarSize() const
    return AQPoint(m_screen->Width, m_screen->BarHeight+1);
 }
 
+TextFont *AQScreen::font()
+{
+   return m_drawInfo->dri_Font;
+}
 
 AQApplication *AQApplication::s_aqApp = nullptr;
 
@@ -334,7 +338,7 @@ MsgPort *AQApplication::userPort() const
    return m_userPort;
 } 
 
-AQScreen *AQApplication::screen(AQWidget *w) const
+AQScreen *AQApplication::screen(const AQWidget *w) const
 {
 //For now all windows on defaultScreen
 // Screen *s = w->m_window->m_window->WScreen;

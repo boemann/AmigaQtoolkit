@@ -142,15 +142,9 @@ void AQWidget::setWindowFlags(UWORD flags)
    m_windowFlags = flags;
 }
 
-int AQWidget::fontHeight() const
+TextFont *AQWidget::font() const
 {
-   if (m_window)
-      return m_window->m_window->RPort->TxHeight;
-
-   if (m_parent)
-      return m_parent->fontHeight();
-
-   return 1;
+   return aqApp->screen(this)->font();
 }
 
 void AQWidget::grabMouse()

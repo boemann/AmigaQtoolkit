@@ -21,6 +21,7 @@ typedef long BPTR;
 
 struct Screen;
 struct DrawInfo;
+struct TextFont;
 
 class AQScreen {
 public:
@@ -30,6 +31,7 @@ public:
    AQPoint menubarSize() const;
    AQRect availableGeometry() const { return AQRect(0,10,640,502);}
    void drawAmigaKey(RastPort *rp, int x, int y, bool enabled = true);
+   TextFont *font();
 
    friend class AQWindow;
    friend class AQIcon;
@@ -62,7 +64,7 @@ public:
 
    AQWidget *hoveredWidget() const;
 
-   AQScreen *screen(AQWidget *w = nullptr) const;
+   AQScreen *screen(const AQWidget *w = nullptr) const;
 
    AQObject *latestSignalSender;
 

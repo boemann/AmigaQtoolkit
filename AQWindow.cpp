@@ -71,6 +71,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
     | IDCMP_ACTIVEWINDOW | IDCMP_INACTIVEWINDOW
        | IDCMP_INTUITICKS | IDCMP_CHANGEWINDOW);
 
+   SetFont(m_window->RPort, m_screen->m_drawInfo->dri_Font);
 
 //   m_widget->m_palette = new AQPalette();
 //   m_widget->m_palette->ShadowPen = m_drawInfo->dri_Pens[SHADOWPEN]);
@@ -477,17 +478,18 @@ void AQWindow::paintAll()
    // Draw the title
    if (m_flags & TitleBar) {
       SetAPen(rp, m_screen->m_drawInfo->dri_Pens[TEXTPEN]);
-      Move(rp, m_border.x + 10 + m_window->IFont->tf_XSize
-                             , m_border.y - 2 + m_window->IFont->tf_Baseline);   
+      Move(rp, m_border.x + 10 + rp->TxWidth, m_border.y - 2 + rp->TxBaseline);   
       Text(rp, m_widget->m_title, m_widget->m_title.size());
    }
       
    // Draw the close button
    if (m_flags & CloseButton) {
       SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHADOWPEN]);
-      RectFill(rp, m_border.x + 1 , m_border.y, m_border.x + 5, m_border.y + 3);
+      int tx = m_border.x;
+      int ty = m_border.y;
+      RectFill(rp, tx + 1 , ty, tx + 5, ty + 3);
       SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHINEPEN]);
-      RectFill(rp, m_border.x + 2, m_border.y + 1, m_border.x + 4, m_border.y + 2);
+      RectFill(rp, tx + 2, ty + 1, tx + 4, ty + 2);
    }
  
    // Finally draw the widget

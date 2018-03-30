@@ -47,8 +47,8 @@ AQTextEdit::AQTextEdit(AQWidget *parent, bool withScroll)
 
    if (m_scrollBar) {
       Connect<AQTextEdit>(m_scrollBar, "valueChanged", this, &AQTextEdit::scrollUpdate);
-      m_scrollBar->setSingleStep(7);
-      m_scrollBar->setWheelStep(3*7);
+      m_scrollBar->setSingleStep(font()->tf_YSize);
+      m_scrollBar->setWheelStep(3*font()->tf_YSize);
    }
 
    Connect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
@@ -176,15 +176,8 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
 
    m_doc->render(rp, m_docOffset, AQPoint(right-4, bottom-4));
 
-   if (hasFocus() && !m_cursor->hasSelection()) {
-      SetAPen(rp, 3);
-      LONG x = m_cursor->positionInBlock() * rp->TxWidth-1;
-      LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
-      x -= m_docOffset.x;
-      y -= m_docOffset.y;
-      if (y + m_doc->lineHeight() <= bottom - 3)
-         RectFill(rp, x, y, x + 1, y + m_doc->lineHeight());
-   }
+   if (hasFocus())
+      m_doc->renderCursor(rp, m_cursor, m_docOffset, AQPoint(right-4, bottom-4));
 
    ScrollLayer(0, rp->Layer, 2, 2); // restore offset
    restoreClipping(rp);
@@ -379,4 +372,3 @@ void AQTextEdit::onDocumentChanged(AQObject *obj)
    if (m_scrollBar)
       m_scrollBar->setMaximum(m_doc->height());
 }
-   void onDocumentChanged(AQObject *obj);

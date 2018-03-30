@@ -215,7 +215,7 @@ AQListItem *AQListView::itemAtRecurse(const AQListItem *root, int &x, int &y, in
       do {
          len -= availLen;
          str += availLen;
-         y += fontHeight() + 2;
+         y += font()->tf_YSize + 2;
       } while (len>0);
 
 
@@ -417,7 +417,7 @@ void AQListView::paintChildren(RastPort *rp, int &x, int &y, AQListItem *parent)
          Text(rp, str, aqMin(availLen, len));
          len -= availLen;
          str += availLen;
-         y += fontHeight() + 2;
+         y += rp->TxHeight + 2;
       } while (len>0);
 
       if (m_treeMode) {
@@ -563,7 +563,7 @@ bool AQListView::mouseDoubleClickEvent(const IntuiMessage &msg)
    int x = 0;
    int y = 0;
 
-   clickPoint.y += m_scrollBar->value() * (fontHeight() + 2);
+   clickPoint.y += m_scrollBar->value() * (font()->tf_YSize + 2);
    AQListItem *item = itemAtRecurse(m_rootItem, x, y, clickPoint.y);
 
    if (item) {
@@ -584,7 +584,7 @@ bool AQListView::mousePressEvent(const IntuiMessage &msg)
    int x = 0;
    int y = 0;
 
-   clickPoint.y += m_scrollBar->value() * (fontHeight() + 2);
+   clickPoint.y += m_scrollBar->value() * (font()->tf_YSize + 2);
    AQListItem *item = itemAtRecurse(m_rootItem, x, y, clickPoint.y);
 
    if (item) {
@@ -613,7 +613,7 @@ bool AQListView::mouseReleaseEvent(const IntuiMessage &msg)
 
 void AQListView::resizeEvent(const AQPoint &oldSize)
 {
-   m_scrollBar->setPageStep((size().y - 2) / (fontHeight() + 2));
+   m_scrollBar->setPageStep((size().y - 2) / (font()->tf_YSize + 2));
    m_scrollBar->setSize(AQPoint(m_scrollBar->preferredSize().x, size().y));
    m_scrollBar->setPos(AQPoint(size().x - m_scrollBar->size().x, 0));
 }

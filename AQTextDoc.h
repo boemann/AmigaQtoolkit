@@ -12,6 +12,7 @@ class AQCommand;
 
 struct RastPort;
 class TextCommandBase;
+struct TextFont;
 
 class AQTextCursor
 {
@@ -89,6 +90,7 @@ public:
 
    bool saveFile(const AQString &filename) const;
 
+   void setDefaultFont(TextFont *font);
 
    // Command representing latest change - if you take it you own it
    // Listen to commandAvailable signal for notisfication
@@ -98,6 +100,8 @@ public:
    int lineHeight() const;
 
    void render(RastPort *rp, AQPoint docOffset, AQPoint botRight);
+   void renderCursor(RastPort *rp, AQTextCursor *cursor,
+                    AQPoint docOffset, AQPoint botRight);
    int blockNumber(int pos);
 
    enum FindFlags {
@@ -134,9 +138,9 @@ private:
    unsigned long m_capacity;
    unsigned long m_size;
    vector<AQTextCursor *>m_cursors;
-   int m_lineHeight;
    int m_charWidth;
    AQCommand *m_latestCommand;
+   TextFont *m_defaultFont;
 };
 
 #endif

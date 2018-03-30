@@ -54,6 +54,8 @@ void AQButton::recalcSizes()
 {
    RastPort rp;
    InitRastPort(&rp);
+   SetFont(&rp, font());
+
    int w = m_icon.isNull() ? 0 : m_icon.size().x;
    if (!m_text.isEmpty())
       w += TextLength(&rp, m_text, m_text.size());
@@ -64,6 +66,7 @@ void AQButton::recalcSizes()
       setMinimumSize(AQPoint(w + 20, 11));
 
    setPreferredSize(minimumSize());
+   updateGeometry();
 }
 
 void AQButton::enterEvent()
@@ -121,7 +124,7 @@ void AQButton::paintEvent(RastPort *rp, const AQRect &rect)
       Text(rp, m_text, m_text.size());
    }
    if (!m_icon.isNull()) {
-      m_icon.paint(rp, AQPoint(2, 1), AQIcon::Small);
+      m_icon.paint(rp, AQPoint(2, (s.y - m_icon.size().y) / 2), AQIcon::Small);
    }
 }
 

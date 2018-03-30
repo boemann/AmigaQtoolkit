@@ -16,8 +16,8 @@ AQLabel::AQLabel(AQWidget *parent)
 
    setExpanding(false, false);
 
-   setMinimumSize(AQPoint(20, 11));
-   setPreferredSize(AQPoint(20, 11));
+   setMinimumSize(AQPoint(20, 4 + font()->tf_YSize));
+   setPreferredSize(AQPoint(20, 4 + font()->tf_YSize));
 }
 
 AQLabel::~AQLabel()
@@ -31,8 +31,10 @@ void AQLabel::setText(const AQString &text, bool updateSize)
    if (updateSize) {
       RastPort rp;
       InitRastPort(&rp);
+      SetFont(&rp, font());
 
-      setMinimumSize(AQPoint(TextLength(&rp, text, text.size()), 11));
+      setMinimumSize(AQPoint(TextLength(&rp, text, text.size()), 4 + font()->tf_YSize));
+
       setPreferredSize(minimumSize());
 
       updateGeometry();
@@ -61,7 +63,7 @@ void AQLabel::paintEvent(RastPort *rp, const AQRect &rect)
       Text(rp, m_text, m_text.size());
    }
    if (!m_icon.isNull()) {
-      m_icon.paint(rp, AQPoint(2, 1), AQIcon::Small);
+      m_icon.paint(rp, AQPoint(2, (s.y - m_icon.size().y) / 2), AQIcon::Small);
    }
 }
 

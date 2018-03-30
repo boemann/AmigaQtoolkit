@@ -98,6 +98,7 @@ void AQMenu::updateSize()
 {
    RastPort rp;
    InitRastPort(&rp);
+   SetFont(&rp, font());
 
    int width = 8;
    int scWidth = 0;
@@ -190,7 +191,7 @@ void AQMenu::paintEvent(RastPort *rp, const AQRect &rect)
       case SeparatorType: {
          USHORT pt[2] = {0xDDDD, 0x7777};
          SetAfPt(rp, pt,1);
-         RectFill(rp, 6, y-4, right - 6, y-3);
+         RectFill(rp, 6, y - rp->TxBaseline +1, right - 6, y - rp->TxBaseline +2);
          SetAfPt(rp, nullptr, 0);
          y += 6;
          break;
@@ -335,6 +336,7 @@ bool AQMenu::mouseMoveEvent(const IntuiMessage &msg)
    if (m_barMode) {
       RastPort rp;
       InitRastPort(&rp);
+      SetFont(&rp, font());
       while (true) {
          if (msg.MouseX < x || item + 1 == m_entryType.size()) {
             item = -1;
@@ -363,7 +365,7 @@ bool AQMenu::mouseMoveEvent(const IntuiMessage &msg)
          if (m_entryType[item] == SeparatorType)
             y += 6;
          else
-            y += 9;
+            y += font()->tf_YSize + 2;
       }
 
       if (msg.MouseX < 0 || msg.MouseX > size().x
@@ -371,7 +373,7 @@ bool AQMenu::mouseMoveEvent(const IntuiMessage &msg)
          item = -1;
 
       x = size().x - 10;
-      y -= 10;
+      y -= font()->tf_YSize + 3;
    }
 
    if (item == -1 && m_shownSubMenu)
