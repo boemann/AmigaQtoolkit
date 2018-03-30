@@ -64,6 +64,8 @@ public:
 
    AQScreen *screen(AQWidget *w = nullptr) const;
 
+   AQObject *latestSignalSender;
+
    static AQApplication *s_aqApp;
 
    friend class AQWidget;

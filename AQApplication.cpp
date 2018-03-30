@@ -108,6 +108,7 @@ void AQObject::setParent(AQObject *p)
 
 
 void AQObject::emit(const AQString &signalName) {
+   aqApp->latestSignalSender = this;
    for (int i= 0; i < m_connections.size(); ++i) {
       ConnectionBase *c = m_connections[i];
       if (c->m_signalName == signalName)
@@ -115,6 +116,7 @@ void AQObject::emit(const AQString &signalName) {
    }
 }
 void AQObject::emit(const AQString &signalName, int arg) {
+   aqApp->latestSignalSender = this;
    for (int i= 0; i < m_connections.size(); ++i) {
       ConnectionBase *c = m_connections[i];
       if (c->m_signalName == signalName)
@@ -122,6 +124,7 @@ void AQObject::emit(const AQString &signalName, int arg) {
    }
 }
 void AQObject::emit(const AQString &signalName, AQObject *arg) {
+   aqApp->latestSignalSender = this;
    for (int i= 0; i < m_connections.size(); ++i) {
       ConnectionBase *c = m_connections[i];
       if (c->m_signalName == signalName)
