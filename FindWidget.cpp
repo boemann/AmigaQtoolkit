@@ -222,6 +222,9 @@ void FindWidget::onCaseSensitiveChanged(int on)
 
 void FindWidget::activateFind()
 {
+   if (!m_doc)
+      return;
+
    if (m_mode == 0)
       Connect<FindWidget>(m_doc, "documentChanged", this, &FindWidget::updateFindResults);
 
@@ -234,6 +237,9 @@ void FindWidget::activateFind()
 
 void FindWidget::activateReplace()
 {
+   if (!m_doc)
+      return;
+
    if (m_mode == 0)
       Connect<FindWidget>(m_doc, "documentChanged", this, &FindWidget::updateFindResults);
 
