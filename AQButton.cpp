@@ -4,12 +4,15 @@
 
 #include <proto/graphics.h>
 
+#include <stdio.h>
+
 AQButton::AQButton(bool toolMode, AQWidget *parent)
    : AQWidget(parent)
    , m_pressed(false)
    , m_toolMode(toolMode)
    , m_hovered(false)
    , m_checkable(false)
+   , m_subButton(nullptr)
 {
    setBgPen(-1); // no bg but we draw ourself
 
@@ -27,13 +30,26 @@ void AQButton::setCheckable(bool c)
    m_checkable = c;
 }
 
+bool AQButton::isChecked() const
+{
+  return m_checkable && m_pressed;
+}
+
 void AQButton::setChecked(bool c)
 {
-   if (!m_checkable || m_pressed == c)
+   if (!m_checkable)
       return;
 
    m_pressed = c;
    update();   
+}
+
+void AQButton::setShowSubButton()
+{
+   m_subButton = new AQButton(true, this);
+   m_subButton->setText("x");
+   Connect<AQButton>(m_subButton, "clicked", this, &AQButton::onSubClicked);
+   recalcSizes();
 }
 
 void AQButton::setText(const AQString &text)
@@ -60,11 +76,18 @@ void AQButton::recalcSizes()
    if (!m_text.isEmpty())
       w += TextLength(&rp, m_text, m_text.size());
 
-   if (m_toolMode)
-      setMinimumSize(AQPoint(w + 4, 11));
-   else
-      setMinimumSize(AQPoint(w + 20, 11));
+   w += m_toolMode ? 2 : 10;
 
+   if (m_subButton) {
+      w += 4;
+      m_subButton->setPos(AQPoint(w, 1));
+      m_subButton->setSize(m_subButton->preferredSize()-AQPoint(2,2));
+      w += m_subButton->size().x;
+   }
+
+   w += m_toolMode ? 2 : 10;
+
+   setMinimumSize(AQPoint(w, 4 + rp.TxHeight));
    setPreferredSize(minimumSize());
    updateGeometry();
 }
@@ -119,8 +142,11 @@ void AQButton::paintEvent(RastPort *rp, const AQRect &rect)
    if (!m_text.isEmpty()) {
       SetAPen(rp, DARK);
       SetDrMd(rp, JAM1);
-      Move(rp, (s.x - TextLength(rp, m_text, m_text.size())) / 2
-             , (s.y - rp->TxHeight)/2 + rp->TxBaseline);
+      if (m_toolMode)
+         Move(rp, 2, (s.y - rp->TxHeight)/2 + rp->TxBaseline);
+      else
+         Move(rp, (s.x - TextLength(rp, m_text, m_text.size())) / 2
+                , (s.y - rp->TxHeight)/2 + rp->TxBaseline);
       Text(rp, m_text, m_text.size());
    }
    if (!m_icon.isNull()) {
@@ -135,6 +161,7 @@ bool AQButton::mousePressEvent(const IntuiMessage &msg)
    else
       m_pressed = true;
    update();
+
    return true;
 }
 
@@ -153,3 +180,7 @@ bool AQButton::mouseReleaseEvent(const IntuiMessage &msg)
    return true;
 }
 
+void AQButton::onSubClicked()
+{
+   emit("subClicked");
+}

@@ -14,6 +14,7 @@ class Project;
 class AQLabel;
 class DocInfo;
 class FindWidget;
+class AQTabBar;
 
 typedef long BPTR;
 
@@ -30,8 +31,7 @@ public:
    void saveFileAs();
    void saveFile();
    void saveAll();
-   void onBuildProject();
-   void onRun();
+   void closeFile();
    void onFileItemDoubleClicked(AQObject *obj);
    void onDocModificationChanged(AQObject *obj);
    void onCursorPositionChanged(AQObject *obj);
@@ -49,9 +49,16 @@ public:
 private:
    void openProject(const AQString &projectPath);
    void openFile(const AQString &path);
-   void switchToDocument(DocInfo *newCurrent);
+   void closeFile(const AQString &path);
+   void switchToDocument(const AQString &path);
    void gotoLine(int n);
 
+   void onBuildProject();
+   void onRun();
+   void onCurrentTabChanged(int i);
+   void onTabCloseRequest(int i);
+
+   AQTabBar *m_tabBar;
    AQTextEdit *m_textEdit;
    AQListView *m_projectView;
    AQListView *m_outputView;

@@ -41,6 +41,7 @@ public:
 
    void setMenu(AQMenu *menu);
 
+   AQString tooltip() const;
    void setTooltip(const AQString &tooltip);
 
    void setWindowTitle(const AQString &title);

@@ -65,12 +65,15 @@ AQTextDoc *AQTextEdit::document() const
 
 void AQTextEdit::setDocument(AQTextDoc *doc, AQTextCursor *cursor)
 {
-   Disconnect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
+   if (m_doc)
+      Disconnect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
    m_doc = doc;
    m_cursor = cursor;
-   if (m_scrollBar)
-      m_scrollBar->setMaximum(m_doc->height());
-   Connect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
+   if (m_doc) {
+      if (m_scrollBar)
+         m_scrollBar->setMaximum(m_doc->height());
+      Connect<AQTextEdit>(m_doc, "documentChanged", this, &AQTextEdit::onDocumentChanged);
+   }
    update();
 }
 
@@ -86,6 +89,9 @@ AQScrollBar *AQTextEdit::verticalScrollBar() const
 
 void AQTextEdit::scrollUpdate(int delta)
 {
+   if (!m_doc)
+      return;
+
    AQRect area(2, 2, size().x - 4, size().y - 4);
 
    if (!m_scrollBar) {
@@ -110,6 +116,9 @@ void AQTextEdit::scrollUpdate(int delta)
 
 void AQTextEdit::cut()
 {
+   if (!m_doc)
+      return;
+
    aqApp->clipboard()->setText(m_cursor->selectedText());
    m_cursor->deleteSelection();
    update();
@@ -117,11 +126,17 @@ void AQTextEdit::cut()
 
 void AQTextEdit::copy()
 {
+   if (!m_doc)
+      return;
+
    aqApp->clipboard()->setText(m_cursor->selectedText());
 }
 
 void AQTextEdit::paste()
 {
+   if (!m_doc)
+      return;
+
    m_cursor->deleteSelection();
    m_cursor->insertText(aqApp->clipboard()->text());
    update();
@@ -129,6 +144,9 @@ void AQTextEdit::paste()
 
 void AQTextEdit::ensureCursorVisible(EnsureType type)
 {
+   if (!m_doc)
+      return;
+
    if (!m_scrollBar)
       return;
 
@@ -169,6 +187,10 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
    Move(rp, right, 0);
    Draw(rp, 0, 0);
    Draw(rp, 0, bottom);
+
+   if (!m_doc)
+      return;
+
 
    pushClipRect(rp, clipRect);
 
@@ -218,6 +240,9 @@ AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
 
 bool AQTextEdit::keyEvent(const IntuiMessage &msg)
 {
+   if (!m_doc)
+      return false;
+
    AQRect cursorPreRect = cursorRect();
    bool hadSelection = m_cursor->hasSelection();
 
@@ -301,6 +326,9 @@ void AQTextEdit::focusOutEvent()
 
 bool AQTextEdit::mouseDoubleClickEvent(const IntuiMessage &msg)
 {
+   if (!m_doc)
+      return false;
+
    if (msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
       return true;
 
@@ -312,6 +340,9 @@ bool AQTextEdit::mouseDoubleClickEvent(const IntuiMessage &msg)
 
 bool AQTextEdit::mousePressEvent(const IntuiMessage &msg)
 {
+   if (!m_doc)
+      return false;
+
    setFocus();
 
    AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
@@ -340,6 +371,9 @@ bool AQTextEdit::mousePressEvent(const IntuiMessage &msg)
 
 bool AQTextEdit::mouseMoveEvent(const IntuiMessage &msg)
 {
+   if (!m_doc)
+      return false;
+
    AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
    if (m_scrollBar)
       clickPoint.y += m_docOffset.y;
@@ -369,6 +403,9 @@ void AQTextEdit::resizeEvent(const AQPoint &oldSize)
 
 void AQTextEdit::onDocumentChanged(AQObject *obj)
 {
+   if (!m_doc)
+      return;
+
    if (m_scrollBar)
       m_scrollBar->setMaximum(m_doc->height());
 }

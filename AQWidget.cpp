@@ -121,6 +121,12 @@ void AQWidget::setMenu(AQMenu *menu)
    m_menu->setParent(this);
 }
 
+
+AQString AQWidget::tooltip() const
+{
+   return m_tooltip;
+}
+
 void AQWidget::setTooltip(const AQString &tooltip)
 {
    m_tooltip = tooltip;

@@ -23,6 +23,7 @@ SRCS = AQApplication.cpp \
        AQMenu.cpp \
        AQScrollBar.cpp \
        AQSplitter.cpp \
+       AQTabBar.cpp \
        AQTextEdit.cpp \
        AQTextDoc.cpp \
        AQLineEdit.cpp \
@@ -52,6 +53,7 @@ HDRS = AQApplication.h \
        AQMenu.h \
        AQScrollBar.h \
        AQSplitter.h \
+       AQTabBar.h \
        AQTextEdit.h \
        AQTextDoc.h \
        AQLineEdit.h \

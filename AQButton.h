@@ -11,7 +11,11 @@ public:
    ~AQButton();
 
    void setCheckable(bool c);
+
+   bool isChecked() const;
    void setChecked(bool c);
+
+   void setShowSubButton();
    void setText(const AQString &text);
    void setIcon(const AQIcon &icon);
 
@@ -25,12 +29,15 @@ protected:
 
 private:
    void recalcSizes();
+   void onSubClicked();
+
    AQString m_text;
    AQIcon m_icon;
    bool m_pressed;
    bool m_toolMode;
    bool m_hovered;
    bool m_checkable;
+   AQButton *m_subButton;
 };
    
 #endif

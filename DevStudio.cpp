@@ -10,6 +10,7 @@
 #include <AQLabel.h>
 #include <AQMenu.h>
 #include <AQCommandStack.h>
+#include <AQTabBar.h>
 
 #include <proto/dos.h>
 
@@ -96,6 +97,12 @@ DevStudio::DevStudio()
    Connect<DevStudio>(saveAllAction, "triggered", this, &DevStudio::saveAll);
    aqApp->addAction(saveAllAction);
 
+   AQAction *closeAction = new AQAction(this);
+   closeAction->setShortcut("Amiga+W");
+   closeAction->setText("Close File");
+   Connect<DevStudio>(closeAction, "triggered", this, &DevStudio::closeFile);
+   aqApp->addAction(closeAction);
+
    AQAction *quitAction = new AQAction(this);
    quitAction->setShortcut("Amiga+Q");
    quitAction->setText("Quit");
@@ -172,9 +179,20 @@ DevStudio::DevStudio()
 
    setWindowTitle("Amiga Development Studio");
 
-   m_textEdit = new AQTextEdit();
+   AQWidget *central = new AQWidget(this);
+   AQLayout *centralL = new AQLayout(false);
+
+   m_tabBar = new AQTabBar(central);
+   centralL->addWidget(m_tabBar);
+   Connect<DevStudio>(m_tabBar, "currentChanged", this, &DevStudio::onCurrentTabChanged);
+   Connect<DevStudio>(m_tabBar, "tabCloseClicked", this, &DevStudio::onTabCloseRequest);
+
+   m_textEdit = new AQTextEdit(central);
    m_textEdit->setPreferredSize(AQPoint(640, 400));
-   setCentralWidget(m_textEdit);
+   centralL->addWidget(m_textEdit);
+
+   central->setLayout(centralL);
+   setCentralWidget(central);
 
    m_projectView = new AQListView();
    setLeftSideBar(m_projectView);
@@ -228,6 +246,8 @@ DevStudio::DevStudio()
    projectMenu->addAction(saveAction);
    projectMenu->addAction(saveAsAction);
    projectMenu->addAction(saveAllAction);
+   projectMenu->addSeparator();
+   projectMenu->addAction(closeAction);
    projectMenu->addSeparator();
    projectMenu->addAction(quitAction);
    menubar->addMenu(projectMenu);
@@ -370,23 +390,59 @@ void DevStudio::openFile(const AQString &path)
 {
    if (m_loadedDocs.find(path) == m_loadedDocs.end()) {
       m_loadedDocs[path] = new DocInfo(this, path);
+      m_tabBar->addTab(qFileName(path));
    } else {
       if (m_currentDoc == m_loadedDocs[path])
          return; // already current
    }
 
-   switchToDocument(m_loadedDocs[path]);
+   switchToDocument(path);
+}
 
-   //FIXME for now add to list - change when we have a tabbar
-   for (int i = 0; i < m_project->filesCount(); ++i) {
-      if (m_project->projectPath() + "/" + m_project->filename(i) == path)
-         return;
+void DevStudio::closeFile()
+{
+   map<AQString, DocInfo *>::iterator it = m_loadedDocs.begin();
+   while (it != m_loadedDocs.end()) {
+      if (it->second == m_currentDoc) {
+         closeFile(it->first);
+         break;
+      }
+      it++;
    }
+}
 
-   AQListItem *sourceItem= new AQListItem(m_projectView);
-   sourceItem->setText(0, path);
-   sourceItem->setText(1, path);
-   m_projectView->addTopLevelItem(sourceItem);
+void DevStudio::closeFile(const AQString &path)
+{
+   map<AQString, DocInfo *>::iterator it = m_loadedDocs.find(path);
+   if (it == m_loadedDocs.end())
+      return;
+
+   if (!it->second->commandStack->isClean())
+printf("%s\nIs not saved. Are you sure you want to close?\n", (char *)path);
+
+
+   m_loadedDocs.erase(path);
+
+   if (m_loadedDocs.empty()) {
+      m_currentDoc = nullptr;
+      m_textEdit->setDocument(nullptr, nullptr);
+      onCursorPositionChanged(nullptr);
+//   onUndoRedoActionTextsChanged();
+//   m_findWidget->setDocument(m_currentDoc->doc, m_currentDoc->cursor, m_currentDoc->m_findReplaceMode);
+      
+   } else
+      switchToDocument(m_loadedDocs.begin()->first);
+
+   int tabIndex = 0;
+   while (tabIndex < m_tabBar->count()) {
+      if (m_tabbar->tabToolTip(tabIndex) == path)
+         break;
+      ++tabIndex;
+   } 
+
+   delete it->second;
+
+   m_tabBar->removeTab(tabIndex);
 }
 
 void DevStudio::gotoLine(int n)
@@ -472,12 +528,23 @@ void DevStudio::onBuildProject()
    m_project->build();
 }
 
-void DevStudio::switchToDocument(DocInfo *newCurrent)
+void DevStudio::switchToDocument(const AQString &path)
 {
+   DocInfo *newCurrent = m_loadedDocs[path];
+
    m_currentDoc->offset.y = m_textEdit->verticalScrollBar()->value();
    m_currentDoc->m_findReplaceMode = m_findWidget->currentActiveMode();
 
    m_currentDoc = newCurrent;
+
+   int tabIndex = 0;
+   while (tabIndex < m_tabBar->count()) {
+      if (m_tabbar->tabToolTip(tabIndex) == path)
+         break;
+      ++tabIndex;
+   } 
+   m_tabBar->setCurrentIndex(tabIndex);
+
 
    m_textEdit->setDocument(m_currentDoc->doc, m_currentDoc->cursor);
    m_textEdit->verticalScrollBar()->setValue(m_currentDoc->offset.y);
@@ -492,10 +559,21 @@ void DevStudio::onFileItemDoubleClicked(AQObject *obj)
    AQListItem *item = (AQListItem *)(obj);
    AQString path(item->text(1));
 
-   if (m_loadedDocs.find(path) == m_loadedDocs.end())
-      m_loadedDocs[path] = new DocInfo(this, path);
+   openFile(path);
+}
 
-   switchToDocument(m_loadedDocs[path]);
+void DevStudio::onCurrentTabChanged(int i)
+{
+   AQString path = m_tabbar->tabToolTip(i);
+
+   switchToDocument(path);
+}
+
+void DevStudio::onTabCloseRequest(int i)
+{
+   AQString path = m_tabbar->tabToolTip(i);
+
+   closeFile(path);
 }
 
 void DevStudio::onDocModificationChanged(AQObject *obj)
@@ -513,6 +591,11 @@ void DevStudio::onDocModificationChanged(AQObject *obj)
 
 void DevStudio::onCursorPositionChanged(AQObject *obj)
 {
+   if (obj == nullptr) {
+      m_positionLabel->setText("Ln:     Col:     ", false);
+      return;
+   }
+
    AQTextDoc *doc = static_cast<AQTextDoc *>(obj);
    map<AQString, DocInfo *>::iterator it = m_loadedDocs.begin();
 

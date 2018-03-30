@@ -323,9 +323,9 @@ void AQApplication::registerModalWindow(AQWindow *window)
 
 void AQApplication::unregisterWindow(AQWindow *window)
 {
-  m_modalWindows.erase(std::remove(m_modalWindows.begin(), m_modalWindows.end(), window), m_modalWindows.end());
+   m_modalWindows.erase(std::remove(m_modalWindows.begin(), m_modalWindows.end(), window), m_modalWindows.end());
 
-  m_windows.erase(std::remove(m_windows.begin(), m_windows.end(), window), m_windows.end());
+   m_windows.erase(std::remove(m_windows.begin(), m_windows.end(), window), m_windows.end());
 }
 
 void AQApplication::addAction(AQAction *a)
