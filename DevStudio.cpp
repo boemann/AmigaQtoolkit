@@ -138,12 +138,12 @@ DevStudio::DevStudio()
 
    m_findAction = new AQAction(this);
    m_findAction->setShortcut("Amiga+F");
-   m_findAction->setText("Find");
+   m_findAction->setText("Find...");
    aqApp->addAction(m_findAction);
 
    m_replaceAction = new AQAction(this);
    m_replaceAction->setShortcut("Amiga+H");
-   m_replaceAction->setText("Replace");
+   m_replaceAction->setText("Replace...");
    aqApp->addAction(m_replaceAction);
 
    AQAction *runAction = new AQAction(this);
