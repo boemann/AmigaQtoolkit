@@ -11,6 +11,7 @@ public:
    ~AQButton();
 
    void setCheckable(bool c);
+   void setChecked(bool c);
    void setText(const AQString &text);
    void setIcon(const AQIcon &icon);
 

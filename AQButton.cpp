@@ -27,6 +27,15 @@ void AQButton::setCheckable(bool c)
    m_checkable = c;
 }
 
+void AQButton::setChecked(bool c)
+{
+   if (!m_checkable || m_pressed == c)
+      return;
+
+   m_pressed = c;
+   update();   
+}
+
 void AQButton::setText(const AQString &text)
 {
    m_text = text;
