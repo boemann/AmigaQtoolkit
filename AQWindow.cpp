@@ -350,7 +350,7 @@ void AQWindow::paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg)
 
       if (child->isTopLevel())
          continue;
-      if (child->geometry().contains(clip)) {
+      if (child->m_visible && child->geometry().contains(clip)) {
          // child can handle all of the clip
          paintWidget(child, rp, clip, winBg);
          ScrollLayer(0, rp->Layer, pos.x, pos.y);  // undo the painting offset

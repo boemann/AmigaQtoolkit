@@ -324,6 +324,9 @@ void AQWidget::update()
 
 void AQWidget::update(const AQRect &rect)
 {
+   if (!m_visible)
+      return;
+
    AQRect r(rect.topLeft + m_pos, rect.bottomRight + m_pos);
 
    if (!isTopLevel())
@@ -417,7 +420,7 @@ AQWidget *AQWidget::widgetAt(WORD &x, WORD &y)
       AQWidget *child = m_children[i];
       if (child->isTopLevel())
          continue;
-      if (child->geometry().contains(p)) {
+      if (child->m_visible && child->geometry().contains(p)) {
          x -= child->pos().x;
          y -= child->pos().y;
 
