@@ -17,6 +17,7 @@ class AQLayout;
 class AQAction;
 class AQMenu;
 class AQLayoutItem;
+class AQToolTip;
 
 class AQWidget : public AQObject
 {
@@ -41,8 +42,8 @@ public:
 
    void setMenu(AQMenu *menu);
 
-   AQString tooltip() const;
-   void setTooltip(const AQString &tooltip);
+   AQString toolTip() const;
+   void setToolTip(const AQString &text);
 
    void setWindowTitle(const AQString &title);
    void setWindowModality(int modal); // 0=not (default) 1 = application modal
@@ -149,6 +150,7 @@ public:
    friend class AQWindow;
    friend class AQApplication;
    friend class AQLayoutItem;
+   friend class AQToolTip;
 
 protected:
    virtual bool event(IntuiMessage &msg);
@@ -183,7 +185,7 @@ private:
    bool m_enabled;
    bool m_visible;
    AQString m_title;
-   AQString m_tooltip;
+   AQString m_toolTip;
 
    AQLayout *m_layout;
    vector<AQWidget *> m_children;

@@ -411,6 +411,7 @@ void DevStudio::openFile(const AQString &path)
    if (m_loadedDocs.find(path) == m_loadedDocs.end()) {
       m_loadedDocs[path] = new DocInfo(this, path);
       m_tabBar->addTab(qFileName(path));
+      m_tabBar->setTabToolTip(m_tabBar->count()-1, path);
    } else {
       if (m_currentDoc == m_loadedDocs[path])
          return; // already current
@@ -455,7 +456,7 @@ printf("%s\nIs not saved. Are you sure you want to close?\n", (char *)path);
 
    int tabIndex = 0;
    while (tabIndex < m_tabBar->count()) {
-      if (m_tabbar->tabToolTip(tabIndex) == path)
+      if (m_tabBar->tabToolTip(tabIndex) == path)
          break;
       ++tabIndex;
    } 
@@ -581,7 +582,7 @@ void DevStudio::switchToDocument(const AQString &path)
 
    int tabIndex = 0;
    while (tabIndex < m_tabBar->count()) {
-      if (m_tabbar->tabToolTip(tabIndex) == path)
+      if (m_tabBar->tabToolTip(tabIndex) == path)
          break;
       ++tabIndex;
    } 
@@ -606,14 +607,14 @@ void DevStudio::onFileItemDoubleClicked(AQObject *obj)
 
 void DevStudio::onCurrentTabChanged(int i)
 {
-   AQString path = m_tabbar->tabToolTip(i);
+   AQString path = m_tabBar->tabToolTip(i);
 
    switchToDocument(path);
 }
 
 void DevStudio::onTabCloseRequest(int i)
 {
-   AQString path = m_tabbar->tabToolTip(i);
+   AQString path = m_tabBar->tabToolTip(i);
 
    closeFile(path);
 }

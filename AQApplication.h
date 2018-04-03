@@ -22,6 +22,7 @@ typedef long BPTR;
 struct Screen;
 struct DrawInfo;
 struct TextFont;
+struct AQToolTip;
 
 class AQScreen {
 public:

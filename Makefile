@@ -14,21 +14,22 @@ SRCS = AQApplication.cpp \
        AQString.cpp \
        AQWidget.cpp \
        AQWindow.cpp \
-       AQLabel.cpp \
-       AQButton.cpp \
-       AQDialog.cpp \
+       AQToolTip.cpp \
        AQIcon.cpp \
        AQLayout.cpp \
+       AQDialog.cpp \
        AQListView.cpp \
-       AQMenu.cpp \
        AQScrollBar.cpp \
+       AQStatusBar.cpp \
        AQSplitter.cpp \
+       AQLabel.cpp \
+       AQButton.cpp \
+       AQMenu.cpp \
+       AQMainWindow.cpp \
        AQTabBar.cpp \
        AQTextEdit.cpp \
        AQTextDoc.cpp \
        AQLineEdit.cpp \
-       AQStatusBar.cpp \
-       AQMainWindow.cpp \
        DevStudio.cpp \
        Project.cpp \
        FindWidget.cpp \
@@ -44,21 +45,22 @@ HDRS = AQApplication.h \
        AQString.h \
        AQWidget.h \
        AQWindow.h \
-       AQLabel.h \
-       AQButton.h \
-       AQDialog.h \
+       AQToolTip.h \
        AQIcon.h \
        AQLayout.h \
+       AQDialog.h \
        AQListView.h \
-       AQMenu.h \
        AQScrollBar.h \
        AQSplitter.h \
+       AQLabel.h \
+       AQButton.h \
+       AQMenu.h \
+       AQMainWindow.h \
        AQTabBar.h \
        AQTextEdit.h \
        AQTextDoc.h \
        AQLineEdit.h \
        AQStatusBar.h \
-       AQMainWindow.h \
        DevStudio.h \
        Project.h \
        FindWidget.h \
@@ -70,7 +72,7 @@ RELOBJS = $(patsubst %.cpp,release/%.o, $(__OBJS))
 DEBOBJS = $(patsubst %.cpp,debug/%.o, $(__OBJS))
  
 release: $(RELOBJS)
-	g++ -o release/$(PROG) $(CFLAGS) -noixemul $(LIBS) $(RELOBJS)
+	g++ -o release/$(PROG) $(CFLAGS) -s -noixemul $(LIBS) $(RELOBJS)
 
 debug: $(DEBOBJS)
 	g++ -o debug/$(PROG) -g $(CFLAGS) $(LIBS) $(DEBOBJS)

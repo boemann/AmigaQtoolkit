@@ -28,7 +28,7 @@ Hook refreshHook;
 
 AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    : m_window(nullptr)
-   , m_active(true)
+   , m_active((flags & ToolTip) != ToolTip)
    , m_winControl(WidgetArea)
    , m_flags(Flags(flags & Normal))
    , m_widget(widget)
@@ -60,7 +60,7 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    WA_Height, prefSize.y,
    WA_Left, widget->pos().x,
    WA_Top, widget->pos().y,
-   WA_Activate, TRUE,
+   WA_Activate, m_active,
    WA_Flags, WFLG_BORDERLESS | WFLG_RMBTRAP,
    WA_SimpleRefresh, TRUE,
    WA_MinWidth, 5,

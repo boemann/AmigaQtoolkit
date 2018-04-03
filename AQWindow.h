@@ -31,7 +31,8 @@ public:
       MinimizeButton = 0x80,
       Normal = 0xFF,
       Hover = 0x8000,
-      Popup = 0x100
+      Popup = 0x100,
+      ToolTip = 0x300 // A popup that doesn't activate
    };
 
    AQWindow(AQWidget *widget, int modality, UWORD flags);

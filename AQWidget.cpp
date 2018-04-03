@@ -122,14 +122,14 @@ void AQWidget::setMenu(AQMenu *menu)
 }
 
 
-AQString AQWidget::tooltip() const
+AQString AQWidget::toolTip() const
 {
-   return m_tooltip;
+   return m_toolTip;
 }
 
-void AQWidget::setTooltip(const AQString &tooltip)
+void AQWidget::setToolTip(const AQString &text)
 {
-   m_tooltip = tooltip;
+   m_toolTip = text;
 }
 
 

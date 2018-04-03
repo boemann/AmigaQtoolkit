@@ -4,6 +4,7 @@
 
 #include <exec/types.h>
 #include <intuition/intuition.h>
+#include <intuition/intuitionbase.h>
 
 #include <proto/exec.h>
 #include <proto/graphics.h>
@@ -16,6 +17,7 @@
 #include <AQString.h>
 #include <AQClipboard.h>
 #include <AQAction.h>
+#include <AQToolTip.h>
 
 using std::vector;
 
@@ -262,6 +264,8 @@ void AQApplication::processEvents(bool &stayAlive)
          IntuiMessage imsgCopy = *imsg;
          ReplyMsg((Message *)imsg);
 
+         AQToolTip::filterIntuiMessage(imsgCopy);
+
          if (imsgCopy.Class == IDCMP_ACTIVEWINDOW) {
             if (m_popupWindows.size()) {
                continue;
@@ -295,6 +299,8 @@ void AQApplication::processEvents(bool &stayAlive)
                break;
             }
          }
+
+         AQToolTip::checkShow(m_hoveredWidget);
       }
       while (stayAlive && (!m_closing) && (asyncMsg = GetMsg(m_asyncFilePort))) {
          struct DosPacket *packet;
@@ -367,7 +373,10 @@ void AQApplication::setHoveredWidget(AQWidget *w)
       if (m_hoveredWidget)
          m_hoveredWidget->leaveEvent();
 
-       m_hoveredWidget = w;
+      m_hoveredWidget = w;
+
+      
+      AQToolTip::s_avaitReactivation = false;
 
       if (m_hoveredWidget)
          m_hoveredWidget->enterEvent();

@@ -33,11 +33,11 @@ FindWidget::FindWidget(AQTextEdit *textEdit, AQWidget *parent)
 
    AQLayout *textL = new AQLayout(false);
    m_findLine = new AQLineEdit(this);  // Find text
-   m_findLine->setTooltip("Term to find");
+   m_findLine->setToolTip("Term to find");
    textL->addWidget(m_findLine);
    Connect<FindWidget>(m_findLine->document(), "documentChanged", this, &FindWidget::onFindLineChanged);
    m_replaceLine = new AQLineEdit(this); // Replace text
-   m_replaceLine->setTooltip("Term to put instead");
+   m_replaceLine->setToolTip("Term to put instead");
    textL->addWidget(m_replaceLine);
 
    m_layout->addItem(textL);
@@ -47,19 +47,19 @@ FindWidget::FindWidget(AQTextEdit *textEdit, AQWidget *parent)
    AQLayout *upperbuttonsL = new AQLayout(true);
 
    AQButton *m_prevB = new AQButton(true, this); // Find Previous button
-   m_prevB->setTooltip("Find next");
+   m_prevB->setToolTip("Find next");
    m_prevB->setIcon(AQIcon("find-previous"));
    upperbuttonsL->addWidget(m_prevB);
    Connect<FindWidget>(m_prevB, "clicked", this, &FindWidget::findPrevious);
 
    m_nextB = new AQButton(true, this); // Find Next button
-   m_nextB->setTooltip("Find next");
+   m_nextB->setToolTip("Find next");
    m_nextB->setIcon(AQIcon("find-next"));
    upperbuttonsL->addWidget(m_nextB);
    Connect<FindWidget>(m_nextB, "clicked", this, &FindWidget::findNext);
 
    AQButton *b = new AQButton(true, this);
-   b->setTooltip("Match case");
+   b->setToolTip("Match case");
    b->setIcon(AQIcon("matchcase"));
    b->setCheckable(true);
    upperbuttonsL->addWidget(b);
@@ -67,7 +67,7 @@ FindWidget::FindWidget(AQTextEdit *textEdit, AQWidget *parent)
 
    b = new AQButton(true, this);
    b->setIcon(AQIcon("wholeword"));
-   b->setTooltip("Match whole word");
+   b->setToolTip("Match whole word");
    b->setCheckable(true);
    upperbuttonsL->addWidget(b);
    Connect<FindWidget>(b, "clicked", this, &FindWidget::onWholeWordChanged);
@@ -77,13 +77,13 @@ FindWidget::FindWidget(AQTextEdit *textEdit, AQWidget *parent)
    AQLayout *lowerbuttonsL = new AQLayout(true);
 
    m_replaceB = new AQButton(true, this);
-   m_replaceB->setTooltip("Replace next");
+   m_replaceB->setToolTip("Replace next");
    m_replaceB->setIcon(AQIcon("replace"));
    lowerbuttonsL->addWidget(m_replaceB);
    Connect<FindWidget>(m_replaceB, "clicked", this, &FindWidget::replace);
 
    m_replaceAllB = new AQButton(true, this);
-   m_replaceAllB->setTooltip("Replace all");
+   m_replaceAllB->setToolTip("Replace all");
    m_replaceAllB->setIcon(AQIcon("replaceall"));
    lowerbuttonsL->addWidget(m_replaceAllB);
    Connect<FindWidget>(m_replaceAllB, "clicked", this, &FindWidget::replaceAll);

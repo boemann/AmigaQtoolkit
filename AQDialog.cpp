@@ -55,18 +55,22 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
    if (features & CancelButton) {
       AQButton *b = new AQButton(false, this);
       b->setText("Cancel");
+      b->setToolTip("Close dialog without doing anything");
       Connect<AQDialog>(b, "clicked", this, &AQDialog::dismiss);
       buttonLayout->addWidget(b);
    }
    
    AQButton *b = new AQButton(true, this);
    b->setIcon(AQIcon("back"));
+   b->setToolTip("Back to previous folder");
    locationLayout->addWidget(b);
    b = new AQButton(true, this);
    b->setIcon(AQIcon("forward"));
+   b->setToolTip("Forward to folder");
    locationLayout->addWidget(b);
    b = new AQButton(true, this);
    b->setIcon(AQIcon("levelup"));
+   b->setToolTip("Parent folder");
    locationLayout->addWidget(b);
    Connect<AQDialog>(b, "clicked", this, &AQDialog::onCdUp);
    m_locationName = new AQLineEdit(this);

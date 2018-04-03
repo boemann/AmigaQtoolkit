@@ -58,7 +58,7 @@ void AQTabBar::setTabToolTip(int index, const AQString &tip)
    if (index >= m_tabs.size())
       return;
 
-   m_tabs[index]->setTooltip(tooltip);
+   m_tabs[index]->setToolTip(tip);
 }
 
 AQString AQTabBar::tabToolTip(int index) const
@@ -66,7 +66,7 @@ AQString AQTabBar::tabToolTip(int index) const
    if (index >= m_tabs.size())
       return AQString();
 
-   return m_tabs[index]->tooltip();
+   return m_tabs[index]->toolTip();
 }
 
 void AQTabBar::setCurrentIndex(int index)

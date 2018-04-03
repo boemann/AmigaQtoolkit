@@ -20,8 +20,8 @@ public:
 
    void setCurrentIndex(int index);
 
-   void setTabTooltip(int index, const AQString &tooltip);
-   AQString tabTooltip(int index) const;
+   void setTabToolTip(int index, const AQString &tooltip);
+   AQString tabToolTip(int index) const;
 
 private:
    void onTabClicked(int on);
