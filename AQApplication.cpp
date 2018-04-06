@@ -269,10 +269,19 @@ void AQApplication::processEvents(bool &stayAlive)
          IntuiMessage imsgCopy = *imsg;
          ReplyMsg((Message *)imsg);
 
-         if (m_modalWindows.size() && imsgCopy.Class == IDCMP_ACTIVEWINDOW
-                && imsgCopy.IDCMPWindow != m_modalWindows[m_modalWindows.size()-1]->m_window) {
-            ActivateWindow(m_modalWindows[m_modalWindows.size()-1]->m_window);
-            WindowToFront(m_modalWindows[m_modalWindows.size()-1]->m_window);
+         if (imsgCopy.Class == IDCMP_ACTIVEWINDOW) {
+            if (m_popupWindows.size()) {
+               continue;
+            } else if (m_modalWindows.size())
+               if (imsgCopy.IDCMPWindow != m_modalWindows[m_modalWindows.size()-1]->m_window) { {
+                  ActivateWindow(m_modalWindows[m_modalWindows.size()-1]->m_window);
+                  WindowToFront(m_modalWindows[m_modalWindows.size()-1]->m_window);
+               }
+            }
+         } else if (imsgCopy.Class == IDCMP_INACTIVEWINDOW) {
+            if (m_popupWindows.size()) {
+               continue;
+            }
          }
 
          if (imsgCopy.Class == IDCMP_VANILLAKEY || imsgCopy.Class == IDCMP_RAWKEY) {
@@ -321,9 +330,17 @@ void AQApplication::registerModalWindow(AQWindow *window)
    m_modalWindows.push_back(window);
 }
 
+void AQApplication::registerPopupWindow(AQWindow *window)
+{
+   registerWindow(window);
+
+   m_popupWindows.push_back(window);
+}
+
 void AQApplication::unregisterWindow(AQWindow *window)
 {
    m_modalWindows.erase(std::remove(m_modalWindows.begin(), m_modalWindows.end(), window), m_modalWindows.end());
+   m_popupWindows.erase(std::remove(m_popupWindows.begin(), m_popupWindows.end(), window), m_popupWindows.end());
 
    m_windows.erase(std::remove(m_windows.begin(), m_windows.end(), window), m_windows.end());
 }

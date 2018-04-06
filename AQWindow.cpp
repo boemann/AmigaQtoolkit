@@ -38,6 +38,13 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 {
    refreshHook.h_Entry = (ULONG (*)() )backfill;
 
+   if (flags & Popup)
+      aqApp->registerPopupWindow(this);
+   else if (modality > 0)
+      aqApp->registerModalWindow(this);
+   else
+      aqApp->registerWindow(this);
+
    if (m_flags & (TitleBar | CloseButton | MinimizeButton | MaximizeButton)) {
       m_border = AQPoint(4, 3);
       m_titleHeight = m_screen->m_drawInfo->dri_Font->tf_YSize;
@@ -80,11 +87,6 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
 //   m_widget->m_palette->BasePen = m_drawInfo->dri_Pens[SHINEPEN]);
 //   m_widget->m_palette->TextPen = m_drawInfo->dri_Pens[TEXTPEN]);
 
-
-   if(modality > 0)
-      aqApp->registerModalWindow(this);
-   else
-      aqApp->registerWindow(this);
 
    m_widget->m_window = this;
 
@@ -307,11 +309,15 @@ void AQWindow::event(IntuiMessage &msg)
    }
             
    case IDCMP_ACTIVEWINDOW:
+      if (m_active)
+         break;
       m_active = true;
       m_widget->changeEvent(AQWidget::Activation);
       paintAll();
       break;
    case IDCMP_INACTIVEWINDOW:
+      if (!m_active)
+         break;
       m_active = false;
       m_widget->changeEvent(AQWidget::InActivation);
       paintAll();

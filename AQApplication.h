@@ -77,12 +77,14 @@ protected:
    void setFocus(AQWidget *w);
    void registerWindow(AQWindow *window);
    void registerModalWindow(AQWindow *window);
+   void registerPopupWindow(AQWindow *window);
    void unregisterWindow(AQWindow *window);
    void setHoveredWidget(AQWidget *w);
 
 private:
    vector<AQWindow *>m_windows;
    vector<AQWindow *>m_modalWindows;
+   vector<AQWindow *>m_popupWindows;
    vector<AQAction *>m_actions;
    bool m_closing;
    AQWidget *m_focusWidget;
