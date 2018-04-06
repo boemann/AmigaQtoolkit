@@ -8,7 +8,6 @@
 #include <proto/exec.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
-#include <proto/gadtools.h>
 #include <proto/layers.h>
 #include <proto/dos.h>
 
@@ -152,22 +151,16 @@ void AQObject::unregisterConnection(const ConnectionBase &cb)
 AQScreen::AQScreen()
    : m_screen(nullptr)
    , m_drawInfo(nullptr)
-   , m_visualInfo(nullptr)
 {
    m_screen = LockPubScreen(NULL);
 
    if (m_screen) {
-      m_visualInfo = GetVisualInfo(m_screen, TAG_DONE);
       m_drawInfo = GetScreenDrawInfo(m_screen);
    }
 }
 
 AQScreen::~AQScreen()
 {
-   if (m_visualInfo) {
-      FreeVisualInfo(m_visualInfo);
-   }
-   
    if (m_drawInfo) {
       FreeScreenDrawInfo(m_screen, m_drawInfo);
    }

@@ -39,7 +39,6 @@ public:
 private:
    Screen *m_screen;
    DrawInfo *m_drawInfo;
-   void *m_visualInfo;
 };
 
 class AQApplication : public AQObject
