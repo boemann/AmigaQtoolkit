@@ -12,7 +12,10 @@ public:
 
    AQString projectPath() const;
 
+   void setConfiguration(const AQString &configuration);
+
    void build();
+   void clean();
    void run();
 
 private:

@@ -165,6 +165,21 @@ DevStudio::DevStudio()
    Connect<DevStudio>(buildProjectAction, "triggered", this, &DevStudio::onBuildProject);
    aqApp->addAction(buildProjectAction);
 
+   AQAction *cleanProjectAction = new AQAction(this);
+   cleanProjectAction->setText("Clean Project");
+   Connect<DevStudio>(cleanProjectAction, "triggered", this, &DevStudio::onCleanProject);
+   aqApp->addAction(cleanProjectAction);
+
+   AQAction *releaseConfigurationAction = new AQAction(this);
+   releaseConfigurationAction->setText("Release");
+   Connect<DevStudio>(releaseConfigurationAction, "triggered", this, &DevStudio::onReleaseConfiguration);
+   aqApp->addAction(releaseConfigurationAction);
+
+   AQAction *debugConfigurationAction = new AQAction(this);
+   debugConfigurationAction->setText("Debug");
+   Connect<DevStudio>(debugConfigurationAction, "triggered", this, &DevStudio::onDebugConfiguration);
+   aqApp->addAction(debugConfigurationAction);
+
    AQAction *prevMessageAction = new AQAction(this);
    prevMessageAction->setShortcut("Shift+F8");
    prevMessageAction->setText("Previous message");
@@ -266,6 +281,11 @@ DevStudio::DevStudio()
 
    AQMenu *buildMenu = new AQMenu("Build");
    buildMenu->addAction(buildProjectAction);
+   buildMenu->addAction(cleanProjectAction);
+   AQMenu *configurationMenu = new AQMenu("Configuration");
+   configurationMenu->addAction(debugConfigurationAction);
+   configurationMenu->addAction(releaseConfigurationAction);
+   buildMenu->addMenu(configurationMenu);
    buildMenu->addSeparator();
    buildMenu->addAction(prevMessageAction);
    buildMenu->addAction(nextMessageAction);
@@ -516,6 +536,16 @@ void DevStudio::onRun()
    m_project->run();
 }
 
+void DevStudio::onReleaseConfiguration()
+{
+   m_project->setConfiguration("release");
+}
+
+void DevStudio::onDebugConfiguration()
+{
+   m_project->setConfiguration("debug");
+}
+
 void DevStudio::onBuildProject()
 {
    saveAll();
@@ -526,6 +556,18 @@ void DevStudio::onBuildProject()
    aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
 
    m_project->build();
+}
+
+void DevStudio::onCleanProject()
+{
+   saveAll();
+   m_incompleteAddedOutput = nullptr;
+   m_outputView->clear();
+
+   m_pipeFh =  Open("PIPE:adsbuild", MODE_OLDFILE);
+   aqApp->startAsyncRead(m_pipeFh, m_pipeBuffer, 599);
+
+   m_project->clean();
 }
 
 void DevStudio::switchToDocument(const AQString &path)

@@ -102,6 +102,11 @@ AQString Project::filename(int index)
    return AQString();
 }
 
+void Project::setConfiguration(const AQString &configuration)
+{
+   m_configuration = configuration;
+}
+
 void Project::build()
 {
    AQString cmd("protect ads:runmake +s");
@@ -110,6 +115,16 @@ void Project::build()
    cmd = AQString("run >nil: ads:runmake ");
    cmd += m_projectPath + " ";
    cmd += m_configuration;
+   Execute(cmd, 0, Output());
+}
+
+void Project::clean()
+{
+   AQString cmd("protect ads:runmake +s");
+   Execute(cmd, 0, Output());
+
+   cmd = AQString("run >nil: ads:runmake ");
+   cmd += m_projectPath + " clean";
    Execute(cmd, 0, Output());
 }
 

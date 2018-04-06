@@ -54,6 +54,9 @@ private:
    void gotoLine(int n);
 
    void onBuildProject();
+   void onCleanProject();
+   void onReleaseConfiguration();
+   void onDebugConfiguration();
    void onRun();
    void onCurrentTabChanged(int i);
    void onTabCloseRequest(int i);
