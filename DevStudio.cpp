@@ -172,11 +172,15 @@ DevStudio::DevStudio()
 
    AQAction *releaseConfigurationAction = new AQAction(this);
    releaseConfigurationAction->setText("Release");
+   releaseConfigurationAction->setCheckable(true);
    Connect<DevStudio>(releaseConfigurationAction, "triggered", this, &DevStudio::onReleaseConfiguration);
    aqApp->addAction(releaseConfigurationAction);
 
    AQAction *debugConfigurationAction = new AQAction(this);
    debugConfigurationAction->setText("Debug");
+   debugConfigurationAction->setCheckable(true);
+   debugConfigurationAction->joinMutexWith(releaseConfigurationAction);
+   releaseConfigurationAction->setChecked(true);
    Connect<DevStudio>(debugConfigurationAction, "triggered", this, &DevStudio::onDebugConfiguration);
    aqApp->addAction(debugConfigurationAction);
 

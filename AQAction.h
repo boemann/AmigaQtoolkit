@@ -16,6 +16,15 @@ public:
    void setEnabled(bool on);
    bool enabled() const;
    
+   void setCheckable(bool c);
+   bool isCheckable() const;
+
+   void setChecked(bool c);
+   bool isChecked() const;
+
+   void joinMutexWith(AQAction *member);
+   bool isMutexed() const;
+
    void setText(const AQString &text);
    AQString text() const;
 
@@ -44,7 +53,11 @@ private:
    bool m_scShift;
    char m_scCode;
    bool m_enabled;
+   bool m_checkable;
+   bool m_checked;
    ULONG m_scClass;
+   AQAction *m_prevMutex;
+   AQAction *m_nextMutex;
 };
    
 #endif

@@ -17,6 +17,10 @@ AQAction::AQAction(AQObject *parent)
    , m_scCode(0)
    , m_scClass(IDCMP_VANILLAKEY)
    , m_enabled(true)
+   , m_checkable(false)
+   , m_checked(true)
+   , m_prevMutex(this)
+   , m_nextMutex(this)
 {
 } 
 
@@ -32,6 +36,65 @@ void AQAction::setEnabled(bool on)
 bool AQAction::enabled() const
 {
    return m_enabled;
+}
+
+void AQAction::setCheckable(bool c)
+{
+   m_checkable = c;
+}
+
+bool AQAction::isCheckable() const
+{
+   return m_checkable;
+}
+
+void AQAction::setChecked(bool c)
+{
+   if (!m_checkable)
+      return;
+
+   m_checked = c;
+ 
+   if (!c)
+      return;
+
+   // Un-check all other that we are mutex with
+   for (AQAction *a = m_nextMutex; a != this; a = a->m_nextMutex)
+      if (a != this)
+         a->setChecked(false);
+}
+
+bool AQAction::isChecked() const
+{
+   return m_checked;
+}
+
+void AQAction::joinMutexWith(AQAction *member)
+{
+   // First check that we aren' already grouped
+   for (AQAction *a = member->m_nextMutex; a != member; a = a->m_nextMutex)
+      if (a == this)
+         return; //already merged;
+
+
+   // Think of it as two rings that we split up at '-' and connect at <->
+   //  x  x  member   <->   this  Y  Y
+   //          -              -
+   //  X  X  member2  <->   our2  Y  Y
+
+   AQAction *member2 = member->m_nextMutex;
+   AQAction *our2 = m_prevMutex;
+
+   member->m_nextMutex = this;
+   m_prevMutex = member;
+   
+   our2->m_nextMutex = member2;
+   member2->m_prevMutex = our2;
+}
+
+bool AQAction::isMutexed() const
+{
+   return m_nextMutex != this;
 }
 
 void AQAction::setText(const AQString &text)
@@ -130,8 +193,11 @@ bool AQAction::matchShortcut(const IntuiMessage &msg)
 
 void AQAction::trigger()
 {
+   if (m_checkable && (m_nextMutex == this || !m_checked))
+      setChecked(!m_checked);
+
    if (m_enabled)
-      emit("triggered");
+      emit("triggered", m_checked);
 }
 
 

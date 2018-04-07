@@ -25,7 +25,7 @@ public:
    bool isNull() const;
    AQPoint size() const;
 
-   void paint(RastPort *rp, AQPoint pos, Size size, bool enabled = true);
+   void paint(RastPort *rp, AQPoint pos, Size size, int state = 1);
 
    AQIcon &operator=(const AQIcon &other);
 

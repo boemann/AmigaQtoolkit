@@ -432,6 +432,37 @@ AQIcon::AQIcon(const AQString &fileName)
 
       m_d->genMask();
    }
+   if (fileName == AQString("bullet")) {
+      m_d->init(8, 8, 2);
+      char *bit[8] = {
+      "  1111   ",
+      " 111111 ",
+      "11111111",
+      "11111111",
+      "11111111",
+      "11111111",
+      " 111111 " ,
+      "  1111   ",};
+      convertFromChars(&m_d->rastPort, 14, bit);
+
+      m_d->genMask();
+   }
+   if (fileName == AQString("amigakey")) {
+      Image *img = aqApp->screen()->m_drawInfo->dri_AmigaKey;
+      m_d->init(img->Width +1, img->Height +1, 2);
+      SetRast(&m_d->rastPort, 0);
+      DrawImage(&m_d->rastPort, img, 0, 0);
+      BltBitMap(&m_d->bitMap, 0, 0, &m_d->bitMapFakeMask, 0 ,0, m_d->width, m_d->bitMap.Rows,
+ 0xE0, 0x01, nullptr);
+   }
+   if (fileName == AQString("checkmark")) {
+      Image *img = aqApp->screen()->m_drawInfo->dri_CheckMark;
+      m_d->init(img->Width +1, img->Height +1, 2);
+      SetRast(&m_d->rastPort, 0);
+      DrawImage(&m_d->rastPort, img, 0, 0);
+      BltBitMap(&m_d->bitMap, 0, 0, &m_d->bitMapFakeMask, 0 ,0, m_d->width, m_d->bitMap.Rows,
+ 0xE0, 0x01, nullptr);
+   }
    if (fileName == AQString("blank")) {
       m_d->init(14, 8, 2);
       char *bit[8] = {
@@ -446,14 +477,6 @@ AQIcon::AQIcon(const AQString &fileName)
       convertFromChars(&m_d->rastPort, 14, bit);
 
       m_d->genMask();
-   }
-   if (fileName == AQString("amigakey")) {
-      Image *img = aqApp->screen()->m_drawInfo->dri_AmigaKey;
-      m_d->init(img->Width +1, img->Height +1, 2);
-      SetRast(&m_d->rastPort, 0);
-      DrawImage(&m_d->rastPort, img, 0, 0);
-      BltBitMap(&m_d->bitMap, 0, 0, &m_d->bitMapFakeMask, 0 ,0, m_d->width, m_d->bitMap.Rows,
- 0xE0, 0x01, nullptr);
    }
 }
 
@@ -479,13 +502,13 @@ AQIcon &AQIcon::operator=(const AQIcon &other)
    return *this;
 }
 
-void AQIcon::paint(RastPort *rp, AQPoint pos, AQIcon::Size s, bool enabled)
+void AQIcon::paint(RastPort *rp, AQPoint pos, AQIcon::Size s, int state)
 {
-   if (enabled)
+   if (state==1)
       BltMaskBitMapRastPort(&m_d->bitMap, 0, 0, rp, pos.x, pos.y, m_d->width, 8, 0xE0, m_d->bitMapMask.Planes[0]);
    else {
       int ap = rp->FgPen;
-      SetAPen(rp, 0);
+      SetAPen(rp, (state&2) ? 2 : 0);
       BltPattern(rp, m_d->bitMapMask.Planes[0], pos.x, pos.y, pos.x+m_d->width, pos.y+8, m_d->bitMapMask.BytesPerRow);
       SetAPen(rp, ap);
    }

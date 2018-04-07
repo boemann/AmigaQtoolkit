@@ -101,6 +101,7 @@ void AQMenu::updateSize()
    SetFont(&rp, font());
 
    int width = 8;
+   int checkWidth = 0;
    int scWidth = 0;
    int height = 4;
 
@@ -116,6 +117,9 @@ void AQMenu::updateSize()
          height += 6;
          break;
       case ActionType: {
+         if (m_entryAction[i]->isCheckable())
+            checkWidth = 16;
+
          AQString text = m_entryAction[i]->text();
          width = aqMax(14 + TextLength(&rp, text, text.size()), width);
 
@@ -148,7 +152,7 @@ void AQMenu::updateSize()
    if (scWidth)
       scWidth += 6;
 
-   setMinimumSize(AQPoint(width + scWidth, height));
+   setMinimumSize(AQPoint(checkWidth + width + scWidth, height));
    setPreferredSize(minimumSize());
 }
 
@@ -197,14 +201,24 @@ void AQMenu::paintEvent(RastPort *rp, const AQRect &rect)
          break;
       }
       case ActionType: {
-         bool en = m_entryAction[i]->enabled();
-         if (!en)
+         int state = m_entryAction[i]->enabled() ? 1 : 0;
+         if (state == 0)
             SetAPen(rp, 0);
-
+         
          Move(rp, 6, y);
+
          if (m_hoveredItem == i && m_entryAction[i]->enabled()) {
             RectFill(rp, 4, y - rp->TxBaseline - 1, right - 4, y + 2);
             SetAPen(rp, 2);
+            state = 2;
+         }
+
+         if (m_entryAction[i]->isCheckable()) {
+            if (m_entryAction[i]->isChecked()) {
+               AQIcon i(m_entryAction[i]->isMutexed() ? "bullet" : "checkmark");
+               i.paint(rp, AQPoint(6,y -rp->TxBaseline), AQIcon::Small, state);
+            }
+            Move(rp, 6 + 16, y);
          }
 
          AQString text = m_entryAction[i]->text();
@@ -219,25 +233,25 @@ void AQMenu::paintEvent(RastPort *rp, const AQRect &rect)
             if (m_entryAction[i]->hasAmigaQualifier()) {
                AQIcon i("amigakey");
                ttx -= i.size().x + 2;
-               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, state);
             }
 
             if (m_entryAction[i]->hasAltQualifier()) {
                AQIcon i("altkey");
                ttx -= i.size().x + 2;
-               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, state);
             }
 
             if (m_entryAction[i]->hasShiftQualifier()) {
                AQIcon i("shiftkey");
                ttx -= i.size().x + 2;
-               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, state);
             }
 
             if (m_entryAction[i]->hasCtrlQualifier()) {
                AQIcon i("ctrlkey");
                ttx -= i.size().x + 2;
-               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, en);
+               i.paint(rp, AQPoint(ttx,y -rp->TxBaseline), AQIcon::Small, state);
             }
 
          }
