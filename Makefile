@@ -29,6 +29,7 @@ SRCS = AQApplication.cpp \
        AQTabBar.cpp \
        AQTextEdit.cpp \
        AQTextDoc.cpp \
+       AQTextRender.cpp \
        AQLineEdit.cpp \
        DevStudio.cpp \
        Project.cpp \
@@ -1146,10 +1147,10 @@ AQApplication.o: /gg/os-include/devices/timer.h /gg/os-include/exec/io.h
 AQApplication.o: /gg/os-include/intuition/screens.h
 AQApplication.o: /gg/os-include/intuition/iobsolete.h
 AQApplication.o: /gg/os-include/intuition/preferences.h
-AQApplication.o: /gg/os-include/libraries/gadtools.h
-AQApplication.o: /gg/os-include/proto/exec.h /gg/os-include/exec/memory.h
-AQApplication.o: /gg/os-include/exec/devices.h
+AQApplication.o: /gg/os-include/intuition/intuitionbase.h
 AQApplication.o: /gg/os-include/exec/libraries.h
+AQApplication.o: /gg/os-include/exec/interrupts.h /gg/os-include/proto/exec.h
+AQApplication.o: /gg/os-include/exec/memory.h /gg/os-include/exec/devices.h
 AQApplication.o: /gg/os-include/clib/exec_protos.h
 AQApplication.o: /gg/os-include/inline/exec.h /gg/os-include/inline/macros.h
 AQApplication.o: /gg/os-include/inline/stubs.h
@@ -1172,9 +1173,6 @@ AQApplication.o: /gg/os-include/proto/intuition.h
 AQApplication.o: /gg/os-include/clib/intuition_protos.h
 AQApplication.o: /gg/os-include/intuition/cghooks.h
 AQApplication.o: /gg/os-include/inline/intuition.h
-AQApplication.o: /gg/os-include/proto/gadtools.h
-AQApplication.o: /gg/os-include/clib/gadtools_protos.h
-AQApplication.o: /gg/os-include/inline/gadtools.h
 AQApplication.o: /gg/os-include/proto/layers.h
 AQApplication.o: /gg/os-include/clib/layers_protos.h
 AQApplication.o: /gg/os-include/inline/layers.h /gg/os-include/proto/dos.h
@@ -1184,7 +1182,7 @@ AQApplication.o: /gg/os-include/dos/rdargs.h /gg/os-include/dos/dosasl.h
 AQApplication.o: /gg/os-include/dos/var.h /gg/os-include/dos/notify.h
 AQApplication.o: /gg/os-include/dos/datetime.h /gg/os-include/inline/dos.h
 AQApplication.o: ./AQWindow.h AQLayout.h ./AQWidget.h ./AQClipboard.h
-AQApplication.o: ./AQAction.h
+AQApplication.o: ./AQAction.h ./AQToolTip.h
 AQClipboard.o: ./AQString.h /gg/os-include/dos/dos.h
 AQClipboard.o: /gg/os-include/exec/types.h ./AQKernel.h ./AQClipboard.h
 AQCommandStack.o: ./AQCommandStack.h ./AQObject.h /gg/include/g++-3/vector.h
@@ -1331,7 +1329,7 @@ AQWidget.o: /gg/os-include/inline/layers.h /gg/os-include/proto/intuition.h
 AQWidget.o: /gg/os-include/clib/intuition_protos.h
 AQWidget.o: /gg/os-include/intuition/cghooks.h
 AQWidget.o: /gg/os-include/inline/intuition.h AQLayout.h AQApplication.h
-AQWidget.o: ./AQWindow.h ./AQAction.h
+AQWidget.o: ./AQWindow.h ./AQAction.h ./AQMenu.h
 AQWindow.o: ./AQWindow.h /gg/os-include/exec/types.h ./AQKernel.h
 AQWindow.o: ./AQString.h /gg/os-include/dos/dos.h AQLayout.h
 AQWindow.o: /gg/os-include/graphics/gfx.h ./AQWidget.h
@@ -1377,13 +1375,12 @@ AQWindow.o: /gg/os-include/devices/timer.h /gg/os-include/exec/io.h
 AQWindow.o: /gg/os-include/intuition/screens.h
 AQWindow.o: /gg/os-include/intuition/iobsolete.h
 AQWindow.o: /gg/os-include/intuition/preferences.h ./AQObject.h
-AQWindow.o: /usr/include/stdio.h /gg/os-include/libraries/gadtools.h
-AQWindow.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
-AQWindow.o: /gg/os-include/exec/interrupts.h /gg/os-include/proto/exec.h
-AQWindow.o: /gg/os-include/exec/memory.h /gg/os-include/exec/devices.h
-AQWindow.o: /gg/os-include/clib/exec_protos.h /gg/os-include/inline/exec.h
-AQWindow.o: /gg/os-include/inline/macros.h /gg/os-include/inline/stubs.h
-AQWindow.o: /gg/os-include/intuition/classes.h
+AQWindow.o: /usr/include/stdio.h /gg/os-include/graphics/gfxbase.h
+AQWindow.o: /gg/os-include/exec/libraries.h /gg/os-include/exec/interrupts.h
+AQWindow.o: /gg/os-include/proto/exec.h /gg/os-include/exec/memory.h
+AQWindow.o: /gg/os-include/exec/devices.h /gg/os-include/clib/exec_protos.h
+AQWindow.o: /gg/os-include/inline/exec.h /gg/os-include/inline/macros.h
+AQWindow.o: /gg/os-include/inline/stubs.h /gg/os-include/intuition/classes.h
 AQWindow.o: /gg/os-include/intuition/classusr.h
 AQWindow.o: /gg/os-include/libraries/commodities.h
 AQWindow.o: /gg/os-include/proto/alib.h /gg/os-include/clib/alib_protos.h
@@ -1398,112 +1395,168 @@ AQWindow.o: /gg/os-include/clib/intuition_protos.h
 AQWindow.o: /gg/os-include/intuition/cghooks.h
 AQWindow.o: /gg/os-include/inline/intuition.h /gg/os-include/proto/gadtools.h
 AQWindow.o: /gg/os-include/clib/gadtools_protos.h
+AQWindow.o: /gg/os-include/libraries/gadtools.h
 AQWindow.o: /gg/os-include/inline/gadtools.h /gg/os-include/proto/layers.h
 AQWindow.o: /gg/os-include/clib/layers_protos.h
 AQWindow.o: /gg/os-include/inline/layers.h AQApplication.h ./AQMenu.h
-AQLabel.o: AQLabel.h ./AQWidget.h /gg/include/g++-3/vector.h
-AQLabel.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
-AQLabel.o: /gg/include/g++-3/stl_config.h
-AQLabel.o: /gg/m68k-amigaos/include/_G_config.h
-AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
-AQLabel.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
-AQLabel.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
-AQLabel.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
-AQLabel.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
-AQLabel.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
-AQLabel.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
-AQLabel.o: /gg/include/g++-3/stl_construct.h
-AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
-AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
-AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
-AQLabel.o: /gg/include/g++-3/stl_raw_storage_iter.h
-AQLabel.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
-AQLabel.o: /gg/os-include/machine/ansi.h
-AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
-AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
-AQLabel.o: /usr/include/stdlib.h /usr/include/sys/types.h
-AQLabel.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
-AQLabel.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
-AQLabel.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
-AQLabel.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
-AQLabel.o: /gg/os-include/intuition/intuition.h
-AQLabel.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
-AQLabel.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
-AQLabel.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
-AQLabel.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
-AQLabel.o: /gg/os-include/graphics/copper.h
-AQLabel.o: /gg/os-include/graphics/gfxnodes.h
-AQLabel.o: /gg/os-include/graphics/monitor.h
-AQLabel.o: /gg/os-include/graphics/displayinfo.h
-AQLabel.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
-AQLabel.o: /gg/os-include/hardware/custom.h
-AQLabel.o: /gg/os-include/graphics/rastport.h
-AQLabel.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
-AQLabel.o: /gg/os-include/devices/inputevent.h /gg/os-include/devices/timer.h
-AQLabel.o: /gg/os-include/exec/types.h /gg/os-include/exec/io.h
-AQLabel.o: /gg/os-include/intuition/screens.h
-AQLabel.o: /gg/os-include/intuition/iobsolete.h
-AQLabel.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
-AQLabel.o: ./AQString.h /gg/os-include/dos/dos.h ./AQIcon.h
-AQLabel.o: /gg/os-include/graphics/gfxmacros.h
-AQLabel.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
-AQLabel.o: /gg/os-include/exec/interrupts.h /gg/os-include/proto/graphics.h
-AQLabel.o: /gg/os-include/graphics/scale.h
-AQLabel.o: /gg/os-include/clib/graphics_protos.h
-AQLabel.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
-AQLabel.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
-AQLabel.o: /gg/os-include/inline/graphics.h
-AQButton.o: AQButton.h ./AQWidget.h /gg/include/g++-3/vector.h
-AQButton.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
-AQButton.o: /gg/include/g++-3/stl_config.h
-AQButton.o: /gg/m68k-amigaos/include/_G_config.h
-AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
-AQButton.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
-AQButton.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
-AQButton.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
-AQButton.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
-AQButton.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
-AQButton.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
-AQButton.o: /gg/include/g++-3/stl_construct.h
-AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
-AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
-AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
-AQButton.o: /gg/include/g++-3/stl_raw_storage_iter.h
-AQButton.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
-AQButton.o: /gg/os-include/machine/ansi.h
-AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
-AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
-AQButton.o: /usr/include/stdlib.h /usr/include/sys/types.h
-AQButton.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
-AQButton.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
-AQButton.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
-AQButton.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
-AQButton.o: /gg/os-include/intuition/intuition.h
-AQButton.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
-AQButton.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
-AQButton.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
-AQButton.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
-AQButton.o: /gg/os-include/graphics/copper.h
-AQButton.o: /gg/os-include/graphics/gfxnodes.h
-AQButton.o: /gg/os-include/graphics/monitor.h
-AQButton.o: /gg/os-include/graphics/displayinfo.h
-AQButton.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
-AQButton.o: /gg/os-include/hardware/custom.h
-AQButton.o: /gg/os-include/graphics/rastport.h
-AQButton.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
-AQButton.o: /gg/os-include/devices/inputevent.h
-AQButton.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
-AQButton.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
-AQButton.o: /gg/os-include/intuition/iobsolete.h
-AQButton.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
-AQButton.o: ./AQString.h /gg/os-include/dos/dos.h ./AQIcon.h
-AQButton.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
-AQButton.o: /gg/os-include/exec/interrupts.h /gg/os-include/proto/graphics.h
-AQButton.o: /gg/os-include/graphics/scale.h
-AQButton.o: /gg/os-include/clib/graphics_protos.h
-AQButton.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
-AQButton.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
-AQButton.o: /gg/os-include/inline/graphics.h
+AQToolTip.o: ./AQToolTip.h ./AQWidget.h /gg/include/g++-3/vector.h
+AQToolTip.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQToolTip.o: /gg/include/g++-3/stl_config.h
+AQToolTip.o: /gg/m68k-amigaos/include/_G_config.h
+AQToolTip.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQToolTip.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQToolTip.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQToolTip.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQToolTip.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQToolTip.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQToolTip.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
+AQToolTip.o: /gg/include/g++-3/stl_construct.h
+AQToolTip.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQToolTip.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQToolTip.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQToolTip.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQToolTip.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQToolTip.o: /gg/os-include/machine/ansi.h
+AQToolTip.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQToolTip.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQToolTip.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQToolTip.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQToolTip.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
+AQToolTip.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
+AQToolTip.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
+AQToolTip.o: /gg/os-include/intuition/intuition.h
+AQToolTip.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
+AQToolTip.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
+AQToolTip.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
+AQToolTip.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
+AQToolTip.o: /gg/os-include/graphics/copper.h
+AQToolTip.o: /gg/os-include/graphics/gfxnodes.h
+AQToolTip.o: /gg/os-include/graphics/monitor.h
+AQToolTip.o: /gg/os-include/graphics/displayinfo.h
+AQToolTip.o: /gg/os-include/graphics/modeid.h
+AQToolTip.o: /gg/os-include/utility/tagitem.h
+AQToolTip.o: /gg/os-include/hardware/custom.h
+AQToolTip.o: /gg/os-include/graphics/rastport.h
+AQToolTip.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+AQToolTip.o: /gg/os-include/devices/inputevent.h
+AQToolTip.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
+AQToolTip.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
+AQToolTip.o: /gg/os-include/intuition/iobsolete.h
+AQToolTip.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
+AQToolTip.o: ./AQString.h /gg/os-include/dos/dos.h
+AQToolTip.o: /gg/os-include/graphics/gfxmacros.h
+AQToolTip.o: /gg/os-include/graphics/gfxbase.h
+AQToolTip.o: /gg/os-include/exec/libraries.h /gg/os-include/exec/interrupts.h
+AQToolTip.o: /gg/os-include/intuition/intuitionbase.h
+AQToolTip.o: /gg/os-include/proto/graphics.h /gg/os-include/graphics/scale.h
+AQToolTip.o: /gg/os-include/clib/graphics_protos.h
+AQToolTip.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
+AQToolTip.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
+AQToolTip.o: /gg/os-include/inline/graphics.h AQApplication.h ./AQAction.h
+AQToolTip.o: ./AQWindow.h AQLayout.h ./AQIcon.h /usr/include/stdio.h
+AQIcon.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
+AQIcon.o: /gg/os-include/exec/interrupts.h
+AQIcon.o: /gg/os-include/intuition/intuition.h /gg/os-include/graphics/gfx.h
+AQIcon.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
+AQIcon.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
+AQIcon.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
+AQIcon.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
+AQIcon.o: /gg/os-include/graphics/copper.h /gg/os-include/graphics/gfxnodes.h
+AQIcon.o: /gg/os-include/graphics/monitor.h
+AQIcon.o: /gg/os-include/graphics/displayinfo.h
+AQIcon.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
+AQIcon.o: /gg/os-include/hardware/custom.h /gg/os-include/graphics/rastport.h
+AQIcon.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+AQIcon.o: /gg/os-include/devices/inputevent.h /gg/os-include/devices/timer.h
+AQIcon.o: /gg/os-include/exec/types.h /gg/os-include/exec/io.h
+AQIcon.o: /gg/os-include/intuition/screens.h
+AQIcon.o: /gg/os-include/intuition/iobsolete.h
+AQIcon.o: /gg/os-include/intuition/preferences.h
+AQIcon.o: /gg/os-include/proto/graphics.h /gg/os-include/graphics/scale.h
+AQIcon.o: /gg/os-include/clib/graphics_protos.h
+AQIcon.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
+AQIcon.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
+AQIcon.o: /gg/os-include/inline/graphics.h /gg/os-include/proto/layers.h
+AQIcon.o: /gg/os-include/clib/layers_protos.h /gg/os-include/inline/layers.h
+AQIcon.o: /gg/os-include/proto/icon.h /gg/os-include/clib/icon_protos.h
+AQIcon.o: /gg/os-include/workbench/workbench.h /gg/os-include/inline/icon.h
+AQIcon.o: /gg/os-include/inline/macros.h /gg/os-include/inline/stubs.h
+AQIcon.o: /gg/os-include/intuition/classes.h
+AQIcon.o: /gg/os-include/intuition/classusr.h
+AQIcon.o: /gg/os-include/libraries/commodities.h
+AQIcon.o: /gg/os-include/proto/intuition.h
+AQIcon.o: /gg/os-include/clib/intuition_protos.h
+AQIcon.o: /gg/os-include/intuition/cghooks.h
+AQIcon.o: /gg/os-include/inline/intuition.h ./AQString.h
+AQIcon.o: /gg/os-include/dos/dos.h ./AQKernel.h AQApplication.h
+AQIcon.o: /gg/include/g++-3/vector.h /gg/include/g++-3/algobase.h
+AQIcon.o: /gg/include/g++-3/pair.h /gg/include/g++-3/stl_config.h
+AQIcon.o: /gg/m68k-amigaos/include/_G_config.h
+AQIcon.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQIcon.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQIcon.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQIcon.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQIcon.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQIcon.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQIcon.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
+AQIcon.o: /gg/include/g++-3/stl_construct.h
+AQIcon.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQIcon.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQIcon.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQIcon.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQIcon.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQIcon.o: /gg/os-include/machine/ansi.h
+AQIcon.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQIcon.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQIcon.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQIcon.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQIcon.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
+AQIcon.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
+AQIcon.o: /gg/include/g++-3/stl_vector.h ./AQObject.h ./AQIcon.h
+AQLayout.o: ./AQWidget.h /gg/include/g++-3/vector.h
+AQLayout.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQLayout.o: /gg/include/g++-3/stl_config.h
+AQLayout.o: /gg/m68k-amigaos/include/_G_config.h
+AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQLayout.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQLayout.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQLayout.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQLayout.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQLayout.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQLayout.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
+AQLayout.o: /gg/include/g++-3/stl_construct.h
+AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQLayout.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQLayout.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQLayout.o: /gg/os-include/machine/ansi.h
+AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQLayout.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQLayout.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQLayout.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
+AQLayout.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
+AQLayout.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
+AQLayout.o: /gg/os-include/intuition/intuition.h
+AQLayout.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
+AQLayout.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
+AQLayout.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
+AQLayout.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
+AQLayout.o: /gg/os-include/graphics/copper.h
+AQLayout.o: /gg/os-include/graphics/gfxnodes.h
+AQLayout.o: /gg/os-include/graphics/monitor.h
+AQLayout.o: /gg/os-include/graphics/displayinfo.h
+AQLayout.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
+AQLayout.o: /gg/os-include/hardware/custom.h
+AQLayout.o: /gg/os-include/graphics/rastport.h
+AQLayout.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+AQLayout.o: /gg/os-include/devices/inputevent.h
+AQLayout.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
+AQLayout.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
+AQLayout.o: /gg/os-include/intuition/iobsolete.h
+AQLayout.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
+AQLayout.o: ./AQString.h /gg/os-include/dos/dos.h AQLayout.h
 AQDialog.o: AQDialog.h ./AQWidget.h /gg/include/g++-3/vector.h
 AQDialog.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
 AQDialog.o: /gg/include/g++-3/stl_config.h
@@ -1568,84 +1621,10 @@ AQDialog.o: /gg/os-include/clib/dos_protos.h /gg/os-include/dos/dosextens.h
 AQDialog.o: /gg/os-include/dos/record.h /gg/os-include/dos/rdargs.h
 AQDialog.o: /gg/os-include/dos/dosasl.h /gg/os-include/dos/var.h
 AQDialog.o: /gg/os-include/dos/notify.h /gg/os-include/dos/datetime.h
-AQDialog.o: /gg/os-include/inline/dos.h AQLayout.h ./AQWindow.h AQButton.h
+AQDialog.o: /gg/os-include/inline/dos.h AQLayout.h ./AQWindow.h ./AQButton.h
 AQDialog.o: ./AQIcon.h ./AQTextDoc.h ./AQLineEdit.h ./AQTextEdit.h
-AQDialog.o: ./AQListView.h ./AQScrollBar.h AQLabel.h ./AQSplitter.h
+AQDialog.o: ./AQListView.h ./AQScrollBar.h ./AQLabel.h ./AQSplitter.h
 AQDialog.o: AQApplication.h
-AQIcon.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
-AQIcon.o: /gg/os-include/exec/interrupts.h /gg/os-include/proto/graphics.h
-AQIcon.o: /gg/os-include/graphics/scale.h
-AQIcon.o: /gg/os-include/clib/graphics_protos.h
-AQIcon.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
-AQIcon.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
-AQIcon.o: /gg/os-include/inline/graphics.h /gg/os-include/proto/layers.h
-AQIcon.o: /gg/os-include/clib/layers_protos.h /gg/os-include/inline/layers.h
-AQIcon.o: /gg/os-include/proto/icon.h /gg/os-include/clib/icon_protos.h
-AQIcon.o: /gg/os-include/exec/types.h /gg/os-include/workbench/workbench.h
-AQIcon.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
-AQIcon.o: /gg/os-include/exec/tasks.h /gg/os-include/intuition/intuition.h
-AQIcon.o: /gg/os-include/graphics/gfx.h /gg/os-include/graphics/clip.h
-AQIcon.o: /gg/os-include/exec/semaphores.h /gg/os-include/exec/ports.h
-AQIcon.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
-AQIcon.o: /gg/os-include/graphics/copper.h /gg/os-include/graphics/gfxnodes.h
-AQIcon.o: /gg/os-include/graphics/monitor.h
-AQIcon.o: /gg/os-include/graphics/displayinfo.h
-AQIcon.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
-AQIcon.o: /gg/os-include/hardware/custom.h /gg/os-include/graphics/rastport.h
-AQIcon.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
-AQIcon.o: /gg/os-include/devices/inputevent.h /gg/os-include/devices/timer.h
-AQIcon.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
-AQIcon.o: /gg/os-include/intuition/iobsolete.h
-AQIcon.o: /gg/os-include/intuition/preferences.h /gg/os-include/inline/icon.h
-AQIcon.o: /gg/os-include/inline/macros.h /gg/os-include/inline/stubs.h
-AQIcon.o: /gg/os-include/intuition/classes.h
-AQIcon.o: /gg/os-include/intuition/classusr.h
-AQIcon.o: /gg/os-include/libraries/commodities.h ./AQString.h
-AQIcon.o: /gg/os-include/dos/dos.h ./AQKernel.h ./AQIcon.h
-AQLayout.o: ./AQWidget.h /gg/include/g++-3/vector.h
-AQLayout.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
-AQLayout.o: /gg/include/g++-3/stl_config.h
-AQLayout.o: /gg/m68k-amigaos/include/_G_config.h
-AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
-AQLayout.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
-AQLayout.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
-AQLayout.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
-AQLayout.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
-AQLayout.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
-AQLayout.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
-AQLayout.o: /gg/include/g++-3/stl_construct.h
-AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
-AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
-AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
-AQLayout.o: /gg/include/g++-3/stl_raw_storage_iter.h
-AQLayout.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
-AQLayout.o: /gg/os-include/machine/ansi.h
-AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
-AQLayout.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
-AQLayout.o: /usr/include/stdlib.h /usr/include/sys/types.h
-AQLayout.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
-AQLayout.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
-AQLayout.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
-AQLayout.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
-AQLayout.o: /gg/os-include/intuition/intuition.h
-AQLayout.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
-AQLayout.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
-AQLayout.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
-AQLayout.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
-AQLayout.o: /gg/os-include/graphics/copper.h
-AQLayout.o: /gg/os-include/graphics/gfxnodes.h
-AQLayout.o: /gg/os-include/graphics/monitor.h
-AQLayout.o: /gg/os-include/graphics/displayinfo.h
-AQLayout.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
-AQLayout.o: /gg/os-include/hardware/custom.h
-AQLayout.o: /gg/os-include/graphics/rastport.h
-AQLayout.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
-AQLayout.o: /gg/os-include/devices/inputevent.h
-AQLayout.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
-AQLayout.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
-AQLayout.o: /gg/os-include/intuition/iobsolete.h
-AQLayout.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
-AQLayout.o: ./AQString.h /gg/os-include/dos/dos.h AQLayout.h
 AQListView.o: ./AQListView.h ./AQWidget.h /gg/include/g++-3/vector.h
 AQListView.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
 AQListView.o: /gg/include/g++-3/stl_config.h
@@ -1705,57 +1684,6 @@ AQListView.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
 AQListView.o: /gg/os-include/inline/graphics.h /gg/os-include/proto/layers.h
 AQListView.o: /gg/os-include/clib/layers_protos.h
 AQListView.o: /gg/os-include/inline/layers.h ./AQScrollBar.h
-AQMenu.o: ./AQMenu.h ./AQWidget.h /gg/include/g++-3/vector.h
-AQMenu.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
-AQMenu.o: /gg/include/g++-3/stl_config.h /gg/m68k-amigaos/include/_G_config.h
-AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
-AQMenu.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
-AQMenu.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
-AQMenu.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
-AQMenu.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
-AQMenu.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
-AQMenu.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
-AQMenu.o: /gg/include/g++-3/stl_construct.h
-AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
-AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
-AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
-AQMenu.o: /gg/include/g++-3/stl_raw_storage_iter.h
-AQMenu.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
-AQMenu.o: /gg/os-include/machine/ansi.h
-AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
-AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
-AQMenu.o: /usr/include/stdlib.h /usr/include/sys/types.h
-AQMenu.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
-AQMenu.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
-AQMenu.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
-AQMenu.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
-AQMenu.o: /gg/os-include/intuition/intuition.h /gg/os-include/graphics/clip.h
-AQMenu.o: /gg/os-include/exec/semaphores.h /gg/os-include/exec/nodes.h
-AQMenu.o: /gg/os-include/exec/lists.h /gg/os-include/exec/ports.h
-AQMenu.o: /gg/os-include/exec/tasks.h /gg/os-include/utility/hooks.h
-AQMenu.o: /gg/os-include/graphics/view.h /gg/os-include/graphics/copper.h
-AQMenu.o: /gg/os-include/graphics/gfxnodes.h
-AQMenu.o: /gg/os-include/graphics/monitor.h
-AQMenu.o: /gg/os-include/graphics/displayinfo.h
-AQMenu.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
-AQMenu.o: /gg/os-include/hardware/custom.h /gg/os-include/graphics/rastport.h
-AQMenu.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
-AQMenu.o: /gg/os-include/devices/inputevent.h /gg/os-include/devices/timer.h
-AQMenu.o: /gg/os-include/exec/types.h /gg/os-include/exec/io.h
-AQMenu.o: /gg/os-include/intuition/screens.h
-AQMenu.o: /gg/os-include/intuition/iobsolete.h
-AQMenu.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
-AQMenu.o: ./AQString.h /gg/os-include/dos/dos.h
-AQMenu.o: /gg/os-include/graphics/gfxmacros.h
-AQMenu.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
-AQMenu.o: /gg/os-include/exec/interrupts.h
-AQMenu.o: /gg/os-include/intuition/intuitionbase.h
-AQMenu.o: /gg/os-include/proto/graphics.h /gg/os-include/graphics/scale.h
-AQMenu.o: /gg/os-include/clib/graphics_protos.h
-AQMenu.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
-AQMenu.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
-AQMenu.o: /gg/os-include/inline/graphics.h AQApplication.h ./AQAction.h
-AQMenu.o: /usr/include/stdio.h
 AQScrollBar.o: ./AQScrollBar.h ./AQWidget.h /gg/include/g++-3/vector.h
 AQScrollBar.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
 AQScrollBar.o: /gg/include/g++-3/stl_config.h
@@ -1816,6 +1744,56 @@ AQScrollBar.o: /gg/os-include/graphics/regions.h
 AQScrollBar.o: /gg/os-include/graphics/sprite.h
 AQScrollBar.o: /gg/os-include/hardware/blit.h
 AQScrollBar.o: /gg/os-include/inline/graphics.h
+AQStatusBar.o: AQLayout.h /gg/os-include/graphics/gfx.h ./AQKernel.h
+AQStatusBar.o: ./AQWidget.h /gg/include/g++-3/vector.h
+AQStatusBar.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQStatusBar.o: /gg/include/g++-3/stl_config.h
+AQStatusBar.o: /gg/m68k-amigaos/include/_G_config.h
+AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQStatusBar.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQStatusBar.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQStatusBar.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQStatusBar.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQStatusBar.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQStatusBar.o: /gg/include/g++-3/stl_iterator.h
+AQStatusBar.o: /gg/include/g++-3/type_traits.h
+AQStatusBar.o: /gg/include/g++-3/stl_construct.h
+AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQStatusBar.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQStatusBar.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQStatusBar.o: /gg/os-include/machine/ansi.h
+AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQStatusBar.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQStatusBar.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQStatusBar.o: /gg/include/g++-3/stl_uninitialized.h
+AQStatusBar.o: /gg/include/g++-3/alloc.h /gg/include/g++-3/stl_alloc.h
+AQStatusBar.o: /gg/m68k-amigaos/include/assert.h
+AQStatusBar.o: /gg/include/g++-3/stl_vector.h
+AQStatusBar.o: /gg/os-include/intuition/intuition.h
+AQStatusBar.o: /gg/os-include/graphics/clip.h
+AQStatusBar.o: /gg/os-include/exec/semaphores.h /gg/os-include/exec/nodes.h
+AQStatusBar.o: /gg/os-include/exec/lists.h /gg/os-include/exec/ports.h
+AQStatusBar.o: /gg/os-include/exec/tasks.h /gg/os-include/utility/hooks.h
+AQStatusBar.o: /gg/os-include/graphics/view.h
+AQStatusBar.o: /gg/os-include/graphics/copper.h
+AQStatusBar.o: /gg/os-include/graphics/gfxnodes.h
+AQStatusBar.o: /gg/os-include/graphics/monitor.h
+AQStatusBar.o: /gg/os-include/graphics/displayinfo.h
+AQStatusBar.o: /gg/os-include/graphics/modeid.h
+AQStatusBar.o: /gg/os-include/utility/tagitem.h
+AQStatusBar.o: /gg/os-include/hardware/custom.h
+AQStatusBar.o: /gg/os-include/graphics/rastport.h
+AQStatusBar.o: /gg/os-include/graphics/layers.h
+AQStatusBar.o: /gg/os-include/graphics/text.h
+AQStatusBar.o: /gg/os-include/devices/inputevent.h
+AQStatusBar.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
+AQStatusBar.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
+AQStatusBar.o: /gg/os-include/intuition/iobsolete.h
+AQStatusBar.o: /gg/os-include/intuition/preferences.h ./AQObject.h
+AQStatusBar.o: ./AQString.h /gg/os-include/dos/dos.h ./AQStatusBar.h
 AQSplitter.o: /gg/os-include/graphics/gfxbase.h
 AQSplitter.o: /gg/os-include/exec/libraries.h
 AQSplitter.o: /gg/os-include/exec/interrupts.h
@@ -1871,6 +1849,267 @@ AQSplitter.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
 AQSplitter.o: /gg/os-include/intuition/iobsolete.h
 AQSplitter.o: /gg/os-include/intuition/preferences.h ./AQObject.h
 AQSplitter.o: ./AQString.h /gg/os-include/dos/dos.h ./AQSplitter.h
+AQLabel.o: ./AQLabel.h ./AQWidget.h /gg/include/g++-3/vector.h
+AQLabel.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQLabel.o: /gg/include/g++-3/stl_config.h
+AQLabel.o: /gg/m68k-amigaos/include/_G_config.h
+AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQLabel.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQLabel.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQLabel.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQLabel.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQLabel.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQLabel.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
+AQLabel.o: /gg/include/g++-3/stl_construct.h
+AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQLabel.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQLabel.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQLabel.o: /gg/os-include/machine/ansi.h
+AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQLabel.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQLabel.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQLabel.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQLabel.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
+AQLabel.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
+AQLabel.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
+AQLabel.o: /gg/os-include/intuition/intuition.h
+AQLabel.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
+AQLabel.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
+AQLabel.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
+AQLabel.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
+AQLabel.o: /gg/os-include/graphics/copper.h
+AQLabel.o: /gg/os-include/graphics/gfxnodes.h
+AQLabel.o: /gg/os-include/graphics/monitor.h
+AQLabel.o: /gg/os-include/graphics/displayinfo.h
+AQLabel.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
+AQLabel.o: /gg/os-include/hardware/custom.h
+AQLabel.o: /gg/os-include/graphics/rastport.h
+AQLabel.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+AQLabel.o: /gg/os-include/devices/inputevent.h /gg/os-include/devices/timer.h
+AQLabel.o: /gg/os-include/exec/types.h /gg/os-include/exec/io.h
+AQLabel.o: /gg/os-include/intuition/screens.h
+AQLabel.o: /gg/os-include/intuition/iobsolete.h
+AQLabel.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
+AQLabel.o: ./AQString.h /gg/os-include/dos/dos.h ./AQIcon.h
+AQLabel.o: /gg/os-include/graphics/gfxmacros.h
+AQLabel.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
+AQLabel.o: /gg/os-include/exec/interrupts.h /gg/os-include/proto/graphics.h
+AQLabel.o: /gg/os-include/graphics/scale.h
+AQLabel.o: /gg/os-include/clib/graphics_protos.h
+AQLabel.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
+AQLabel.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
+AQLabel.o: /gg/os-include/inline/graphics.h
+AQButton.o: ./AQButton.h ./AQWidget.h /gg/include/g++-3/vector.h
+AQButton.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQButton.o: /gg/include/g++-3/stl_config.h
+AQButton.o: /gg/m68k-amigaos/include/_G_config.h
+AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQButton.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQButton.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQButton.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQButton.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQButton.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQButton.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
+AQButton.o: /gg/include/g++-3/stl_construct.h
+AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQButton.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQButton.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQButton.o: /gg/os-include/machine/ansi.h
+AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQButton.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQButton.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQButton.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQButton.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
+AQButton.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
+AQButton.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
+AQButton.o: /gg/os-include/intuition/intuition.h
+AQButton.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
+AQButton.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
+AQButton.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
+AQButton.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
+AQButton.o: /gg/os-include/graphics/copper.h
+AQButton.o: /gg/os-include/graphics/gfxnodes.h
+AQButton.o: /gg/os-include/graphics/monitor.h
+AQButton.o: /gg/os-include/graphics/displayinfo.h
+AQButton.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
+AQButton.o: /gg/os-include/hardware/custom.h
+AQButton.o: /gg/os-include/graphics/rastport.h
+AQButton.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+AQButton.o: /gg/os-include/devices/inputevent.h
+AQButton.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
+AQButton.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
+AQButton.o: /gg/os-include/intuition/iobsolete.h
+AQButton.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
+AQButton.o: ./AQString.h /gg/os-include/dos/dos.h ./AQIcon.h
+AQButton.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
+AQButton.o: /gg/os-include/exec/interrupts.h /gg/os-include/proto/graphics.h
+AQButton.o: /gg/os-include/graphics/scale.h
+AQButton.o: /gg/os-include/clib/graphics_protos.h
+AQButton.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
+AQButton.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
+AQButton.o: /gg/os-include/inline/graphics.h /usr/include/stdio.h
+AQMenu.o: ./AQMenu.h ./AQWidget.h /gg/include/g++-3/vector.h
+AQMenu.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQMenu.o: /gg/include/g++-3/stl_config.h /gg/m68k-amigaos/include/_G_config.h
+AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQMenu.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQMenu.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQMenu.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQMenu.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQMenu.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQMenu.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
+AQMenu.o: /gg/include/g++-3/stl_construct.h
+AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQMenu.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQMenu.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQMenu.o: /gg/os-include/machine/ansi.h
+AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQMenu.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQMenu.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQMenu.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQMenu.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
+AQMenu.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
+AQMenu.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
+AQMenu.o: /gg/os-include/intuition/intuition.h /gg/os-include/graphics/clip.h
+AQMenu.o: /gg/os-include/exec/semaphores.h /gg/os-include/exec/nodes.h
+AQMenu.o: /gg/os-include/exec/lists.h /gg/os-include/exec/ports.h
+AQMenu.o: /gg/os-include/exec/tasks.h /gg/os-include/utility/hooks.h
+AQMenu.o: /gg/os-include/graphics/view.h /gg/os-include/graphics/copper.h
+AQMenu.o: /gg/os-include/graphics/gfxnodes.h
+AQMenu.o: /gg/os-include/graphics/monitor.h
+AQMenu.o: /gg/os-include/graphics/displayinfo.h
+AQMenu.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
+AQMenu.o: /gg/os-include/hardware/custom.h /gg/os-include/graphics/rastport.h
+AQMenu.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+AQMenu.o: /gg/os-include/devices/inputevent.h /gg/os-include/devices/timer.h
+AQMenu.o: /gg/os-include/exec/types.h /gg/os-include/exec/io.h
+AQMenu.o: /gg/os-include/intuition/screens.h
+AQMenu.o: /gg/os-include/intuition/iobsolete.h
+AQMenu.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
+AQMenu.o: ./AQString.h /gg/os-include/dos/dos.h
+AQMenu.o: /gg/os-include/graphics/gfxmacros.h
+AQMenu.o: /gg/os-include/graphics/gfxbase.h /gg/os-include/exec/libraries.h
+AQMenu.o: /gg/os-include/exec/interrupts.h
+AQMenu.o: /gg/os-include/intuition/intuitionbase.h
+AQMenu.o: /gg/os-include/proto/graphics.h /gg/os-include/graphics/scale.h
+AQMenu.o: /gg/os-include/clib/graphics_protos.h
+AQMenu.o: /gg/os-include/graphics/gels.h /gg/os-include/graphics/regions.h
+AQMenu.o: /gg/os-include/graphics/sprite.h /gg/os-include/hardware/blit.h
+AQMenu.o: /gg/os-include/inline/graphics.h AQApplication.h ./AQAction.h
+AQMenu.o: ./AQWindow.h AQLayout.h ./AQIcon.h /usr/include/stdio.h
+AQMainWindow.o: AQMainWindow.h ./AQWidget.h /gg/include/g++-3/vector.h
+AQMainWindow.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQMainWindow.o: /gg/include/g++-3/stl_config.h
+AQMainWindow.o: /gg/m68k-amigaos/include/_G_config.h
+AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQMainWindow.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQMainWindow.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQMainWindow.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQMainWindow.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQMainWindow.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQMainWindow.o: /gg/include/g++-3/stl_iterator.h
+AQMainWindow.o: /gg/include/g++-3/type_traits.h
+AQMainWindow.o: /gg/include/g++-3/stl_construct.h
+AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQMainWindow.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQMainWindow.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQMainWindow.o: /gg/os-include/machine/ansi.h
+AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQMainWindow.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQMainWindow.o: /gg/os-include/machine/types.h
+AQMainWindow.o: /gg/os-include/machine/endian.h
+AQMainWindow.o: /gg/include/g++-3/stl_uninitialized.h
+AQMainWindow.o: /gg/include/g++-3/alloc.h /gg/include/g++-3/stl_alloc.h
+AQMainWindow.o: /gg/m68k-amigaos/include/assert.h
+AQMainWindow.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
+AQMainWindow.o: /gg/os-include/intuition/intuition.h
+AQMainWindow.o: /gg/os-include/graphics/clip.h
+AQMainWindow.o: /gg/os-include/exec/semaphores.h /gg/os-include/exec/nodes.h
+AQMainWindow.o: /gg/os-include/exec/lists.h /gg/os-include/exec/ports.h
+AQMainWindow.o: /gg/os-include/exec/tasks.h /gg/os-include/utility/hooks.h
+AQMainWindow.o: /gg/os-include/graphics/view.h
+AQMainWindow.o: /gg/os-include/graphics/copper.h
+AQMainWindow.o: /gg/os-include/graphics/gfxnodes.h
+AQMainWindow.o: /gg/os-include/graphics/monitor.h
+AQMainWindow.o: /gg/os-include/graphics/displayinfo.h
+AQMainWindow.o: /gg/os-include/graphics/modeid.h
+AQMainWindow.o: /gg/os-include/utility/tagitem.h
+AQMainWindow.o: /gg/os-include/hardware/custom.h
+AQMainWindow.o: /gg/os-include/graphics/rastport.h
+AQMainWindow.o: /gg/os-include/graphics/layers.h
+AQMainWindow.o: /gg/os-include/graphics/text.h
+AQMainWindow.o: /gg/os-include/devices/inputevent.h
+AQMainWindow.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
+AQMainWindow.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
+AQMainWindow.o: /gg/os-include/intuition/iobsolete.h
+AQMainWindow.o: /gg/os-include/intuition/preferences.h ./AQKernel.h
+AQMainWindow.o: ./AQObject.h ./AQString.h /gg/os-include/dos/dos.h
+AQMainWindow.o: /gg/os-include/graphics/gfxbase.h
+AQMainWindow.o: /gg/os-include/exec/libraries.h
+AQMainWindow.o: /gg/os-include/exec/interrupts.h
+AQMainWindow.o: /gg/os-include/proto/graphics.h
+AQMainWindow.o: /gg/os-include/graphics/scale.h
+AQMainWindow.o: /gg/os-include/clib/graphics_protos.h
+AQMainWindow.o: /gg/os-include/graphics/gels.h
+AQMainWindow.o: /gg/os-include/graphics/regions.h
+AQMainWindow.o: /gg/os-include/graphics/sprite.h
+AQMainWindow.o: /gg/os-include/hardware/blit.h
+AQMainWindow.o: /gg/os-include/inline/graphics.h ./AQSplitter.h
+AQMainWindow.o: ./AQStatusBar.h AQLayout.h
+AQTabBar.o: AQTabBar.h ./AQWidget.h /gg/include/g++-3/vector.h
+AQTabBar.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
+AQTabBar.o: /gg/include/g++-3/stl_config.h
+AQTabBar.o: /gg/m68k-amigaos/include/_G_config.h
+AQTabBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQTabBar.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQTabBar.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQTabBar.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+AQTabBar.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+AQTabBar.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
+AQTabBar.o: /gg/include/g++-3/stl_iterator.h /gg/include/g++-3/type_traits.h
+AQTabBar.o: /gg/include/g++-3/stl_construct.h
+AQTabBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQTabBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQTabBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQTabBar.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQTabBar.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+AQTabBar.o: /gg/os-include/machine/ansi.h
+AQTabBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQTabBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQTabBar.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQTabBar.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
+AQTabBar.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
+AQTabBar.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
+AQTabBar.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
+AQTabBar.o: /gg/os-include/intuition/intuition.h
+AQTabBar.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
+AQTabBar.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
+AQTabBar.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
+AQTabBar.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
+AQTabBar.o: /gg/os-include/graphics/copper.h
+AQTabBar.o: /gg/os-include/graphics/gfxnodes.h
+AQTabBar.o: /gg/os-include/graphics/monitor.h
+AQTabBar.o: /gg/os-include/graphics/displayinfo.h
+AQTabBar.o: /gg/os-include/graphics/modeid.h /gg/os-include/utility/tagitem.h
+AQTabBar.o: /gg/os-include/hardware/custom.h
+AQTabBar.o: /gg/os-include/graphics/rastport.h
+AQTabBar.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+AQTabBar.o: /gg/os-include/devices/inputevent.h
+AQTabBar.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
+AQTabBar.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
+AQTabBar.o: /gg/os-include/intuition/iobsolete.h
+AQTabBar.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
+AQTabBar.o: ./AQString.h /gg/os-include/dos/dos.h AQLayout.h ./AQButton.h
+AQTabBar.o: ./AQIcon.h AQApplication.h
 AQTextEdit.o: ./AQTextEdit.h ./AQWidget.h /gg/include/g++-3/vector.h
 AQTextEdit.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
 AQTextEdit.o: /gg/include/g++-3/stl_config.h
@@ -1972,6 +2211,56 @@ AQTextDoc.o: /gg/os-include/dos/dosextens.h /gg/os-include/dos/record.h
 AQTextDoc.o: /gg/os-include/dos/rdargs.h /gg/os-include/dos/dosasl.h
 AQTextDoc.o: /gg/os-include/dos/var.h /gg/os-include/dos/notify.h
 AQTextDoc.o: /gg/os-include/dos/datetime.h /gg/os-include/inline/dos.h
+AQTextRender.o: /gg/include/g++-3/algorithm /gg/include/g++-3/stl_algobase.h
+AQTextRender.o: /gg/include/g++-3/type_traits.h /usr/include/string.h
+AQTextRender.o: /gg/os-include/machine/ansi.h /usr/include/sys/cdefs.h
+AQTextRender.o: /gg/os-include/machine/cdefs.h
+AQTextRender.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+AQTextRender.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+AQTextRender.o: /usr/include/stdlib.h /usr/include/sys/types.h
+AQTextRender.o: /gg/os-include/machine/types.h
+AQTextRender.o: /gg/os-include/machine/endian.h
+AQTextRender.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+AQTextRender.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+AQTextRender.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+AQTextRender.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+AQTextRender.o: /gg/include/g++-3/iostream.h /gg/include/g++-3/streambuf.h
+AQTextRender.o: /gg/include/g++-3/libio.h
+AQTextRender.o: /gg/m68k-amigaos/include/_G_config.h
+AQTextRender.o: /gg/include/g++-3/stl_construct.h
+AQTextRender.o: /gg/include/g++-3/stl_uninitialized.h
+AQTextRender.o: /gg/include/g++-3/stl_tempbuf.h /gg/include/g++-3/stl_algo.h
+AQTextRender.o: /gg/include/g++-3/stl_heap.h ./AQTextDoc.h
+AQTextRender.o: /gg/include/g++-3/vector.h /gg/include/g++-3/algobase.h
+AQTextRender.o: /gg/include/g++-3/pair.h /gg/include/g++-3/stl_config.h
+AQTextRender.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+AQTextRender.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+AQTextRender.o: /gg/include/g++-3/stl_function.h
+AQTextRender.o: /gg/include/g++-3/stl_iterator.h
+AQTextRender.o: /gg/include/g++-3/stl_raw_storage_iter.h
+AQTextRender.o: /gg/include/g++-3/alloc.h /gg/include/g++-3/stl_alloc.h
+AQTextRender.o: /gg/m68k-amigaos/include/assert.h
+AQTextRender.o: /gg/include/g++-3/stl_vector.h ./AQKernel.h ./AQObject.h
+AQTextRender.o: ./AQString.h /gg/os-include/dos/dos.h
+AQTextRender.o: /gg/os-include/exec/types.h ./AQCommand.h
+AQTextRender.o: /usr/include/ctype.h /usr/include/stdio.h
+AQTextRender.o: /gg/os-include/graphics/gfxbase.h
+AQTextRender.o: /gg/os-include/exec/libraries.h
+AQTextRender.o: /gg/os-include/exec/interrupts.h
+AQTextRender.o: /gg/os-include/graphics/rastport.h
+AQTextRender.o: /gg/os-include/proto/graphics.h
+AQTextRender.o: /gg/os-include/graphics/scale.h
+AQTextRender.o: /gg/os-include/clib/graphics_protos.h
+AQTextRender.o: /gg/os-include/graphics/gels.h
+AQTextRender.o: /gg/os-include/graphics/regions.h
+AQTextRender.o: /gg/os-include/graphics/sprite.h
+AQTextRender.o: /gg/os-include/hardware/blit.h
+AQTextRender.o: /gg/os-include/inline/graphics.h /gg/os-include/proto/dos.h
+AQTextRender.o: /gg/os-include/dos/exall.h /gg/os-include/clib/dos_protos.h
+AQTextRender.o: /gg/os-include/dos/dosextens.h /gg/os-include/dos/record.h
+AQTextRender.o: /gg/os-include/dos/rdargs.h /gg/os-include/dos/dosasl.h
+AQTextRender.o: /gg/os-include/dos/var.h /gg/os-include/dos/notify.h
+AQTextRender.o: /gg/os-include/dos/datetime.h /gg/os-include/inline/dos.h
 AQLineEdit.o: ./AQTextDoc.h /gg/include/g++-3/vector.h
 AQLineEdit.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
 AQLineEdit.o: /gg/include/g++-3/stl_config.h
@@ -2020,118 +2309,6 @@ AQLineEdit.o: /gg/os-include/devices/timer.h /gg/os-include/exec/io.h
 AQLineEdit.o: /gg/os-include/intuition/screens.h
 AQLineEdit.o: /gg/os-include/intuition/iobsolete.h
 AQLineEdit.o: /gg/os-include/intuition/preferences.h /usr/include/stdio.h
-AQStatusBar.o: AQLayout.h /gg/os-include/graphics/gfx.h ./AQKernel.h
-AQStatusBar.o: ./AQWidget.h /gg/include/g++-3/vector.h
-AQStatusBar.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
-AQStatusBar.o: /gg/include/g++-3/stl_config.h
-AQStatusBar.o: /gg/m68k-amigaos/include/_G_config.h
-AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
-AQStatusBar.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
-AQStatusBar.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
-AQStatusBar.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
-AQStatusBar.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
-AQStatusBar.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
-AQStatusBar.o: /gg/include/g++-3/stl_iterator.h
-AQStatusBar.o: /gg/include/g++-3/type_traits.h
-AQStatusBar.o: /gg/include/g++-3/stl_construct.h
-AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
-AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
-AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
-AQStatusBar.o: /gg/include/g++-3/stl_raw_storage_iter.h
-AQStatusBar.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
-AQStatusBar.o: /gg/os-include/machine/ansi.h
-AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
-AQStatusBar.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
-AQStatusBar.o: /usr/include/stdlib.h /usr/include/sys/types.h
-AQStatusBar.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
-AQStatusBar.o: /gg/include/g++-3/stl_uninitialized.h
-AQStatusBar.o: /gg/include/g++-3/alloc.h /gg/include/g++-3/stl_alloc.h
-AQStatusBar.o: /gg/m68k-amigaos/include/assert.h
-AQStatusBar.o: /gg/include/g++-3/stl_vector.h
-AQStatusBar.o: /gg/os-include/intuition/intuition.h
-AQStatusBar.o: /gg/os-include/graphics/clip.h
-AQStatusBar.o: /gg/os-include/exec/semaphores.h /gg/os-include/exec/nodes.h
-AQStatusBar.o: /gg/os-include/exec/lists.h /gg/os-include/exec/ports.h
-AQStatusBar.o: /gg/os-include/exec/tasks.h /gg/os-include/utility/hooks.h
-AQStatusBar.o: /gg/os-include/graphics/view.h
-AQStatusBar.o: /gg/os-include/graphics/copper.h
-AQStatusBar.o: /gg/os-include/graphics/gfxnodes.h
-AQStatusBar.o: /gg/os-include/graphics/monitor.h
-AQStatusBar.o: /gg/os-include/graphics/displayinfo.h
-AQStatusBar.o: /gg/os-include/graphics/modeid.h
-AQStatusBar.o: /gg/os-include/utility/tagitem.h
-AQStatusBar.o: /gg/os-include/hardware/custom.h
-AQStatusBar.o: /gg/os-include/graphics/rastport.h
-AQStatusBar.o: /gg/os-include/graphics/layers.h
-AQStatusBar.o: /gg/os-include/graphics/text.h
-AQStatusBar.o: /gg/os-include/devices/inputevent.h
-AQStatusBar.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
-AQStatusBar.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
-AQStatusBar.o: /gg/os-include/intuition/iobsolete.h
-AQStatusBar.o: /gg/os-include/intuition/preferences.h ./AQObject.h
-AQStatusBar.o: ./AQString.h /gg/os-include/dos/dos.h ./AQStatusBar.h
-AQMainWindow.o: AQMainWindow.h ./AQWidget.h /gg/include/g++-3/vector.h
-AQMainWindow.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
-AQMainWindow.o: /gg/include/g++-3/stl_config.h
-AQMainWindow.o: /gg/m68k-amigaos/include/_G_config.h
-AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
-AQMainWindow.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
-AQMainWindow.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
-AQMainWindow.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
-AQMainWindow.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
-AQMainWindow.o: /usr/include/sys/cdefs.h /gg/os-include/machine/cdefs.h
-AQMainWindow.o: /gg/include/g++-3/stl_iterator.h
-AQMainWindow.o: /gg/include/g++-3/type_traits.h
-AQMainWindow.o: /gg/include/g++-3/stl_construct.h
-AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
-AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
-AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
-AQMainWindow.o: /gg/include/g++-3/stl_raw_storage_iter.h
-AQMainWindow.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
-AQMainWindow.o: /gg/os-include/machine/ansi.h
-AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
-AQMainWindow.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
-AQMainWindow.o: /usr/include/stdlib.h /usr/include/sys/types.h
-AQMainWindow.o: /gg/os-include/machine/types.h
-AQMainWindow.o: /gg/os-include/machine/endian.h
-AQMainWindow.o: /gg/include/g++-3/stl_uninitialized.h
-AQMainWindow.o: /gg/include/g++-3/alloc.h /gg/include/g++-3/stl_alloc.h
-AQMainWindow.o: /gg/m68k-amigaos/include/assert.h
-AQMainWindow.o: /gg/include/g++-3/stl_vector.h /gg/os-include/graphics/gfx.h
-AQMainWindow.o: /gg/os-include/intuition/intuition.h
-AQMainWindow.o: /gg/os-include/graphics/clip.h
-AQMainWindow.o: /gg/os-include/exec/semaphores.h /gg/os-include/exec/nodes.h
-AQMainWindow.o: /gg/os-include/exec/lists.h /gg/os-include/exec/ports.h
-AQMainWindow.o: /gg/os-include/exec/tasks.h /gg/os-include/utility/hooks.h
-AQMainWindow.o: /gg/os-include/graphics/view.h
-AQMainWindow.o: /gg/os-include/graphics/copper.h
-AQMainWindow.o: /gg/os-include/graphics/gfxnodes.h
-AQMainWindow.o: /gg/os-include/graphics/monitor.h
-AQMainWindow.o: /gg/os-include/graphics/displayinfo.h
-AQMainWindow.o: /gg/os-include/graphics/modeid.h
-AQMainWindow.o: /gg/os-include/utility/tagitem.h
-AQMainWindow.o: /gg/os-include/hardware/custom.h
-AQMainWindow.o: /gg/os-include/graphics/rastport.h
-AQMainWindow.o: /gg/os-include/graphics/layers.h
-AQMainWindow.o: /gg/os-include/graphics/text.h
-AQMainWindow.o: /gg/os-include/devices/inputevent.h
-AQMainWindow.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
-AQMainWindow.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
-AQMainWindow.o: /gg/os-include/intuition/iobsolete.h
-AQMainWindow.o: /gg/os-include/intuition/preferences.h ./AQKernel.h
-AQMainWindow.o: ./AQObject.h ./AQString.h /gg/os-include/dos/dos.h
-AQMainWindow.o: /gg/os-include/graphics/gfxbase.h
-AQMainWindow.o: /gg/os-include/exec/libraries.h
-AQMainWindow.o: /gg/os-include/exec/interrupts.h
-AQMainWindow.o: /gg/os-include/proto/graphics.h
-AQMainWindow.o: /gg/os-include/graphics/scale.h
-AQMainWindow.o: /gg/os-include/clib/graphics_protos.h
-AQMainWindow.o: /gg/os-include/graphics/gels.h
-AQMainWindow.o: /gg/os-include/graphics/regions.h
-AQMainWindow.o: /gg/os-include/graphics/sprite.h
-AQMainWindow.o: /gg/os-include/hardware/blit.h
-AQMainWindow.o: /gg/os-include/inline/graphics.h ./AQSplitter.h
-AQMainWindow.o: ./AQStatusBar.h AQLayout.h
 DevStudio.o: ./AQScrollBar.h ./AQWidget.h /gg/include/g++-3/vector.h
 DevStudio.o: /gg/include/g++-3/algobase.h /gg/include/g++-3/pair.h
 DevStudio.o: /gg/include/g++-3/stl_config.h
@@ -2178,8 +2355,8 @@ DevStudio.o: /gg/os-include/intuition/iobsolete.h
 DevStudio.o: /gg/os-include/intuition/preferences.h ./AQKernel.h ./AQObject.h
 DevStudio.o: ./AQString.h /gg/os-include/dos/dos.h ./AQIcon.h AQDialog.h
 DevStudio.o: ./AQTextEdit.h ./AQTextDoc.h AQLayout.h ./AQListView.h
-DevStudio.o: AQApplication.h ./AQAction.h ./AQStatusBar.h AQLabel.h
-DevStudio.o: ./AQMenu.h ./AQCommandStack.h ./AQCommand.h
+DevStudio.o: AQApplication.h ./AQAction.h ./AQStatusBar.h ./AQLabel.h
+DevStudio.o: ./AQMenu.h ./AQCommandStack.h ./AQCommand.h AQTabBar.h
 DevStudio.o: /gg/os-include/proto/dos.h /gg/os-include/dos/exall.h
 DevStudio.o: /gg/os-include/clib/dos_protos.h /gg/os-include/dos/dosextens.h
 DevStudio.o: /gg/os-include/dos/record.h /gg/os-include/dos/rdargs.h
@@ -2188,7 +2365,7 @@ DevStudio.o: /gg/os-include/dos/notify.h /gg/os-include/dos/datetime.h
 DevStudio.o: /gg/os-include/inline/dos.h Project.h DevStudio.h
 DevStudio.o: /gg/include/g++-3/map.h /gg/include/g++-3/tree.h
 DevStudio.o: /gg/include/g++-3/stl_tree.h /gg/include/g++-3/stl_map.h
-DevStudio.o: AQMainWindow.h /usr/include/stdio.h
+DevStudio.o: AQMainWindow.h FindWidget.h /usr/include/stdio.h
 Project.o: /gg/os-include/proto/dos.h /gg/os-include/dos/exall.h
 Project.o: /gg/os-include/clib/dos_protos.h /gg/os-include/dos/dosextens.h
 Project.o: /gg/os-include/dos/record.h /gg/os-include/dos/rdargs.h
@@ -2221,6 +2398,54 @@ Project.o: /gg/os-include/machine/types.h /gg/os-include/machine/endian.h
 Project.o: /gg/include/g++-3/stl_uninitialized.h /gg/include/g++-3/alloc.h
 Project.o: /gg/include/g++-3/stl_alloc.h /gg/m68k-amigaos/include/assert.h
 Project.o: /gg/include/g++-3/stl_vector.h /usr/include/stdio.h
+FindWidget.o: /usr/include/stdio.h /usr/include/sys/types.h
+FindWidget.o: /gg/os-include/machine/types.h /usr/include/sys/cdefs.h
+FindWidget.o: /gg/os-include/machine/cdefs.h /gg/os-include/machine/ansi.h
+FindWidget.o: /gg/os-include/machine/endian.h AQLayout.h
+FindWidget.o: /gg/os-include/graphics/gfx.h ./AQKernel.h ./AQWidget.h
+FindWidget.o: /gg/include/g++-3/vector.h /gg/include/g++-3/algobase.h
+FindWidget.o: /gg/include/g++-3/pair.h /gg/include/g++-3/stl_config.h
+FindWidget.o: /gg/m68k-amigaos/include/_G_config.h
+FindWidget.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/stddef.h
+FindWidget.o: /gg/include/g++-3/stl_relops.h /gg/include/g++-3/stl_pair.h
+FindWidget.o: /gg/include/g++-3/iterator.h /gg/include/g++-3/function.h
+FindWidget.o: /gg/include/g++-3/stl_function.h /gg/include/g++-3/iostream.h
+FindWidget.o: /gg/include/g++-3/streambuf.h /gg/include/g++-3/libio.h
+FindWidget.o: /gg/include/g++-3/stl_iterator.h
+FindWidget.o: /gg/include/g++-3/type_traits.h
+FindWidget.o: /gg/include/g++-3/stl_construct.h
+FindWidget.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new.h
+FindWidget.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/new
+FindWidget.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/exception
+FindWidget.o: /gg/include/g++-3/stl_raw_storage_iter.h
+FindWidget.o: /gg/include/g++-3/stl_algobase.h /usr/include/string.h
+FindWidget.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/limits.h
+FindWidget.o: /gg/lib/gcc-lib/m68k-amigaos/2.95.3/include/syslimits.h
+FindWidget.o: /usr/include/stdlib.h /gg/include/g++-3/stl_uninitialized.h
+FindWidget.o: /gg/include/g++-3/alloc.h /gg/include/g++-3/stl_alloc.h
+FindWidget.o: /gg/m68k-amigaos/include/assert.h
+FindWidget.o: /gg/include/g++-3/stl_vector.h
+FindWidget.o: /gg/os-include/intuition/intuition.h
+FindWidget.o: /gg/os-include/graphics/clip.h /gg/os-include/exec/semaphores.h
+FindWidget.o: /gg/os-include/exec/nodes.h /gg/os-include/exec/lists.h
+FindWidget.o: /gg/os-include/exec/ports.h /gg/os-include/exec/tasks.h
+FindWidget.o: /gg/os-include/utility/hooks.h /gg/os-include/graphics/view.h
+FindWidget.o: /gg/os-include/graphics/copper.h
+FindWidget.o: /gg/os-include/graphics/gfxnodes.h
+FindWidget.o: /gg/os-include/graphics/monitor.h
+FindWidget.o: /gg/os-include/graphics/displayinfo.h
+FindWidget.o: /gg/os-include/graphics/modeid.h
+FindWidget.o: /gg/os-include/utility/tagitem.h
+FindWidget.o: /gg/os-include/hardware/custom.h
+FindWidget.o: /gg/os-include/graphics/rastport.h
+FindWidget.o: /gg/os-include/graphics/layers.h /gg/os-include/graphics/text.h
+FindWidget.o: /gg/os-include/devices/inputevent.h
+FindWidget.o: /gg/os-include/devices/timer.h /gg/os-include/exec/types.h
+FindWidget.o: /gg/os-include/exec/io.h /gg/os-include/intuition/screens.h
+FindWidget.o: /gg/os-include/intuition/iobsolete.h
+FindWidget.o: /gg/os-include/intuition/preferences.h ./AQObject.h
+FindWidget.o: ./AQString.h /gg/os-include/dos/dos.h ./AQButton.h ./AQIcon.h
+FindWidget.o: ./AQLineEdit.h ./AQTextEdit.h ./AQTextDoc.h FindWidget.h
 main.o: /usr/include/stdio.h /usr/include/sys/types.h
 main.o: /gg/os-include/machine/types.h /usr/include/sys/cdefs.h
 main.o: /gg/os-include/machine/cdefs.h /gg/os-include/machine/ansi.h

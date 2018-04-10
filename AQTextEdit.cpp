@@ -215,27 +215,28 @@ bool AQTextEdit::wheelEvent(bool up)
 
 AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
 {   
+   AQPoint point = m_doc->pointOfPosition(m_cursor->selectionStart());
+   point.y -= m_doc->defaultFont()->tf_Baseline;
+   point -= m_docOffset;
+   point += AQPoint(2,2); // we have a frame around the actual doc
+   AQPoint bottom = point;
+
    if (fullLineWidth || m_cursor->hasSelection()) {
-      LONG top = m_doc->blockNumber(m_cursor->selectionStart()) * m_doc->lineHeight();
-      LONG bottom = (m_doc->blockNumber(m_cursor->selectionEnd()) + 1) 
-                                           * m_doc->lineHeight();
+      bottom = m_doc->pointOfPosition(m_cursor->selectionEnd());
+      bottom.y -= m_doc->defaultFont()->tf_Baseline;
+      bottom.y += m_doc->defaultFont()->tf_YSize + 1;
+      bottom -= m_docOffset;
+      bottom += AQPoint(2,2); // we have a frame around the actual doc
 
-     
-      LONG right = size().x - 4;
+      point.x = 2;
+      bottom.x = size().x - 4;
       if (m_scrollBar)
-         right -= m_scrollBar->size().x + 2;
+         bottom.x -= m_scrollBar->size().x + 2;
+   } else
+      bottom += AQPoint(2, m_doc->lineHeight() + 1);
 
-      return AQRect(2, top - m_docOffset.y + 2, right, bottom - top);
-   }
 
-   LONG x = m_cursor->positionInBlock() * 6 - 1;
-   LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
-   x -= m_docOffset.x;
-   y -= m_docOffset.y;
-   x += 2; // we have a frame around the actual doc
-   y += 2;
-
-   return AQRect(x, y, 2, m_doc->lineHeight() + 1);
+   return AQRect(point, bottom);
 }
 
 bool AQTextEdit::keyEvent(const IntuiMessage &msg)
@@ -301,7 +302,7 @@ bool AQTextEdit::keyEvent(const IntuiMessage &msg)
             update();
          else
             update(cursorRect(true));
-      } else if (msg.Code >31){
+      } else if (msg.Code >31 || msg.Code == '\t'){
          char cstr[2];
          cstr[0] = msg.Code;
          cstr[1] = 0;

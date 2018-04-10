@@ -14,7 +14,29 @@ struct RastPort;
 class TextCommandBase;
 struct TextFont;
 
-class AQTextCursor
+class AQFormatRange
+{
+public:
+   AQFormatRange(int fg, int bg, TextFont *font);
+
+   void setStartEnd(int start, int end);
+   void render(RastPort *rp, char *data);
+
+   inline AQFormatRange *next() const { return m_next; }
+
+   void split(int at);
+   void modifyWith(AQFormatRange *other);
+
+private:
+   int m_startInBlock;  // invalid when subclassed to cursor
+   int m_endInBlock;     // invalid when subclassed to cursor
+   int m_fgColor;
+   int m_bgColor;
+   TextFont *m_font;
+   AQFormatRange *m_next;
+};
+
+class AQTextCursor : public AQFormatRange
 {
 public:
    AQTextCursor(AQTextDoc &doc);
@@ -92,6 +114,7 @@ public:
 
    bool saveFile(const AQString &filename) const;
 
+   TextFont *defaultFont() const;
    void setDefaultFont(TextFont *font);
 
    // Command representing latest change - if you take it you own it
@@ -101,10 +124,13 @@ public:
    int height() const;
    int lineHeight() const;
 
+   AQPoint pointOfPosition(int pos) const;
+   int positionOfPoint(const AQPoint &p) const;
+
    void render(RastPort *rp, AQPoint docOffset, AQPoint botRight);
    void renderCursor(RastPort *rp, AQTextCursor *cursor,
                     AQPoint docOffset, AQPoint botRight);
-   int blockNumber(int pos);
+   int blockNumber(int pos) const;
 
    enum FindFlags {
       Backward = 0x01,
@@ -114,8 +140,6 @@ public:
    AQTextCursor *find(const AQString &sub, int from, int flags = 0);
 
    AQTextBlock findBlockByLineNumber(int line) const;
-
-   int positionOfPoint(const AQPoint &p) const;
 
    friend class AQTextCursor;
    friend class DeleteCommand;
@@ -132,6 +156,8 @@ private:
    void pushData(int pos, int n, char *chars, bool createCommand = true);
    void deleteData(int pos, int n, bool createCommand = true);
    void updateBlocks();
+
+   void renderBlock(RastPort *rp, int x, int &yTop, int b);
 
    AQTextBlock m_blocks[5000];
    unsigned long m_numBlocks;

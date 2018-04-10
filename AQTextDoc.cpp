@@ -239,7 +239,9 @@ public:
 };
 
 AQTextCursor::AQTextCursor(AQTextDoc &doc)
-   : m_doc(doc)
+   : AQFormatRange(doc.m_cursors.size() ? 1 : 2,
+                        doc.m_cursors.size() ? 7 : 3, nullptr)
+   , m_doc(doc)
 {
    m_doc.addCursor(this);
 }
@@ -829,6 +831,11 @@ void AQTextDoc::setData(const AQString &text)
    emit("documentChanged", this);
 }
 
+TextFont *AQTextDoc::defaultFont() const
+{
+   return m_defaultFont;
+}
+
 void AQTextDoc::setDefaultFont(TextFont *font)
 {
    m_defaultFont = font;
@@ -837,91 +844,6 @@ void AQTextDoc::setDefaultFont(TextFont *font)
 AQString AQTextDoc::toString() const
 {
    return AQString(m_data, m_size);
-}
-
-void AQTextDoc::render(RastPort *rp, AQPoint docOffset, AQPoint botRight)
-{
-   rp->DrawMode = JAM1;
-
-   TextFont *oldFont = rp->Font;
-   SetFont(rp, m_defaultFont);
-   m_charWidth = rp->TxWidth;
-
-   int b = docOffset.y / lineHeight();
-   UWORD y = rp->TxBaseline + b * lineHeight();
-   while (b < m_numBlocks) {
-      // first draw the plain Line
-      SetAPen(rp, 1);
-      SetBPen(rp, 2);
-      SetDrMd(rp, JAM1);
-      Move(rp, -docOffset.x, y - docOffset.y);
-      UWORD len = m_blocks[b+1].m_pos - m_blocks[b].m_pos - 1;
-      
-      Text(rp, m_blocks[b].m_pos + m_data, len);
-
-      // Next draw the cursors on top
-      for (int i = m_cursors.size() -1; i >= 0; --i) {
-         AQTextCursor *cursor = m_cursors[i];
-
-         if (cursor->hasSelection() ) {
-            int extra = 0;
-            int nextLineStart = m_blocks[b+1].m_pos;
-            int thisLineStart = m_blocks[b].m_pos;
-            int selStart = cursor->selectionStart();
-            int selEnd = cursor->selectionEnd();
-            if (selStart < nextLineStart && selEnd >= thisLineStart) {
-               if (selStart < thisLineStart)
-                  selStart = thisLineStart;
-               if (selEnd == thisLineStart)
-                  extra = 2;
-               if (selEnd >= nextLineStart) {
-                  len = nextLineStart - selStart - 1;
-                  extra = rp->TxWidth;
-               } else
-                  len = selEnd - selStart;
-               int x = TextLength(rp, m_blocks[b].m_pos + m_data,(selStart - thisLineStart)) - docOffset.x;
-
-               SetDrMd(rp, JAM2);
-               SetAPen(rp, i>0 ? 1 : 2);
-               SetBPen(rp, i>0 ? 7 : 3);
-               Move(rp, x, y - docOffset.y);
-               Text(rp, m_data + selStart, len);
-               if (extra > 0) {
-                  SetAPen(rp, 3);
-                  x += TextLength(rp, m_data + selStart, len);
-                  int tmpY = y - docOffset.y - rp->TxBaseline;
-                  RectFill(rp, x, tmpY, x + extra - 1, tmpY + rp->TxHeight - 1);
-               }
-            }   
-         }
-      }
-      y += lineHeight();
-      if (y - docOffset.y >= botRight.y)
-         break;
-      ++b;
-   }
-
-   SetFont(rp, oldFont);
-} 
-
-void AQTextDoc::renderCursor(RastPort *rp, AQTextCursor *cursor,
-                     AQPoint docOffset, AQPoint botRight)
-{
-   if (!cursor->hasSelection()) {
-      TextFont *oldFont = rp->Font;
-      SetFont(rp, m_defaultFont);
-
-      SetAPen(rp, 3);
-      int linestart = cursor->position() - cursor->positionInBlock();
-      LONG x = TextLength(rp, m_data + linestart, cursor->positionInBlock())-1;
-      LONG y = blockNumber(cursor->position()) * lineHeight();
-      x -= docOffset.x;
-      y -= docOffset.y;
-      if (y + lineHeight() <= botRight.y + 1)
-         RectFill(rp, x, y, x + 1, y + lineHeight());
-
-      SetFont(rp, oldFont);
-   }
 }
 
 AQCommand *AQTextDoc::takeLatestCommand()
@@ -951,7 +873,7 @@ int AQTextDoc::lineHeight() const
    return m_defaultFont->tf_YSize;
 }
 
-int AQTextDoc::blockNumber(int pos)
+int AQTextDoc::blockNumber(int pos) const
 {
    // do a binary seach to find the block number
    int blockNum = m_numBlocks >> 1;
@@ -1164,44 +1086,4 @@ void AQTextDoc::updateBlocks()
    } while (*ptr);
    m_blocks[m_numBlocks].m_pos = ptr - m_data + 1;
    
-}
-
-int AQTextDoc::positionOfPoint(const AQPoint &p) const
-{
-   if (p.y < 0)
-      return 0;
-
-   int b = p.y / lineHeight();
-   if (b > m_numBlocks)
-      return m_size - 1;
-
-   RastPort rp;
-   InitRastPort(&rp);
-   SetFont(&rp, m_defaultFont);
-
-   int pos = m_blocks[b].m_pos;
-   int lowpos = 0;
-   int highpos = m_blocks[b+1].m_pos - pos -1;
-
-   char *d = m_data +pos;
-   int posInBlock;
-   int testX;
-   do {
-      posInBlock = (highpos + lowpos) / 2;
-      testX = TextLength(&rp, d, posInBlock);
-      if (testX < p.x)
-         lowpos = posInBlock;
-      else
-         highpos = posInBlock;
-   } while (highpos - lowpos > 1);
-
-   if (posInBlock == lowpos) {
-      if ((TextLength(&rp, d, highpos) + testX +1) / 2 < p.x)
-         posInBlock = highpos;
-   } else {
-      if ((testX + TextLength(&rp, d, lowpos)+1) / 2 > p.x)
-         posInBlock = lowpos;
-   }
-   
-   return pos + posInBlock;
 }
