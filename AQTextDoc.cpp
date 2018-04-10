@@ -483,6 +483,79 @@ void AQTextCursor::movePrevChar(bool keepAnchor)
    m_doc.emit("cursorPositionChanged", &m_doc);
 }
 
+void AQTextCursor::moveNextWord(bool keepAnchor)
+{
+   if (m_doc.m_size > m_state.pos) {
+      if (isAlnum(m_state.pos)) {
+         while (m_doc.m_size > m_state.pos && isAlnum(m_state.pos)) {
+            ++m_state.posInBlock;
+            ++m_state.pos;
+         }
+      } else {
+         if (m_doc.m_data[m_state.pos] == '\n')
+            m_state.posInBlock = 0;
+         else
+            ++m_state.posInBlock;
+         ++m_state.pos;
+      }
+   }
+   
+   // skip whitespace except newline
+   while (m_doc.m_size > m_state.pos && (
+             m_doc.m_data[m_state.pos] == ' '
+          || m_doc.m_data[m_state.pos] == '\t')) {
+      ++m_state.posInBlock;
+      ++m_state.pos;
+   }
+   m_state.wishX = m_state.posInBlock;
+
+   if (!keepAnchor) {
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
+   }
+   m_doc.emit("cursorPositionChanged", &m_doc);
+}
+
+void AQTextCursor::movePrevWord(bool keepAnchor)
+{
+   if (m_state.pos && m_state.posInBlock == 0) {
+      --m_state.pos;
+      char *cptr = m_doc.m_data + m_state.pos - 1;
+      while (cptr >= m_doc.m_data && *cptr != '\n')
+         --cptr;
+      ++cptr;
+      m_state.posInBlock = m_doc.m_data + m_state.pos - cptr;
+   }
+
+   // skip whitespace except newline
+   while (m_state.posInBlock && (
+             m_doc.m_data[m_state.pos-1] == ' '
+          || m_doc.m_data[m_state.pos-1] == '\t')) {
+      --m_state.posInBlock;
+      --m_state.pos;
+   }
+
+   if (m_state.posInBlock) {
+      if (isAlnum(m_state.pos-1)) {
+         while (m_state.posInBlock && isAlnum(m_state.pos-1)) {
+            --m_state.posInBlock;
+            --m_state.pos;
+         }
+      } else {
+         --m_state.posInBlock;
+         --m_state.pos;
+      }
+   }
+   
+   m_state.wishX = m_state.posInBlock;
+
+   if (!keepAnchor) {
+      m_state.anchorPos = m_state.pos;
+      m_state.anchorInBlock = m_state.posInBlock;
+   }
+   m_doc.emit("cursorPositionChanged", &m_doc);
+}
+
 void AQTextCursor::moveNextLine(bool keepAnchor)
 {
    int block = m_doc.blockNumber(m_state.pos);

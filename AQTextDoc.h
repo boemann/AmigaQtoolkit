@@ -38,6 +38,8 @@ public:
    void deleteSelection(); // if there is one
    void movePrevChar(bool keepAnchor = false);
    void moveNextChar(bool keepAnchor = false);
+   void movePrevWord(bool keepAnchor = false);
+   void moveNextWord(bool keepAnchor = false);
    void movePrevLine(bool keepAnchor = false);
    void moveNextLine(bool keepAnchor = false);
    void moveStartOfLine(bool keepAnchor = false);

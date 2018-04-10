@@ -249,10 +249,16 @@ bool AQTextEdit::keyEvent(const IntuiMessage &msg)
    if (msg.Class ==IDCMP_RAWKEY) {
       switch (msg.Code) {
       case Key_Left:
-         m_cursor->movePrevChar(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         if (msg.Qualifier & IEQUALIFIER_CONTROL)
+            m_cursor->movePrevWord(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         else
+            m_cursor->movePrevChar(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
          break;
       case Key_Right:
-         m_cursor->moveNextChar(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         if (msg.Qualifier & IEQUALIFIER_CONTROL)
+            m_cursor->moveNextWord(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
+         else
+            m_cursor->moveNextChar(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
          break;
       case Key_Up:
          m_cursor->movePrevLine(msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
@@ -277,7 +283,7 @@ bool AQTextEdit::keyEvent(const IntuiMessage &msg)
          m_cursor->movePageDown((size().y -4) / m_doc->lineHeight()-1, msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT));
          break;
       default:
-         return 0;
+         return false;
       }
    } else { // IDMCP_VANILLAKEY
       if (msg.Code == '\r') {
