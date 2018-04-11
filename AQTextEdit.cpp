@@ -147,19 +147,48 @@ void AQTextEdit::ensureCursorVisible(EnsureType type)
    if (!m_doc)
       return;
 
+   AQPoint p = m_doc->pointOfPosition(m_cursor->position());
+
+   int v = m_docOffset.x;
+
+
+   // First we do horizontal against left side
+   int width = size().x - 4;
+   if (m_scrollBar)
+      width -= m_scrollBar->size().x + 2;
+
+   if (v > p.x)
+      v = p.x - width/4;
+   if (v < 0)
+      v = 0;
+
+   // Next we do horizontal against right side
+   p.x += 2;
+   p.x -= width;
+
+   if (v < p.x)
+      v = p.x + width/4;
+
+   if (v != m_docOffset.x) {
+      m_docOffset.x = v;
+      update();
+   }
+
+   // Next we do vertical against top
    if (!m_scrollBar)
       return;
 
-   LONG y = m_doc->blockNumber(m_cursor->position()) * m_doc->lineHeight();
+   p.y -= m_doc->defaultFont()->tf_Baseline;
+   v = m_docOffset.y;
 
-   int v = m_docOffset.y;
+   if (v > p.y)
+      v = p.y;
 
-   if (v > y)
-      v = y;
-   y += m_doc->lineHeight();
-   y -= size().y - 4 - m_doc->lineHeight();
-   if (v < y)
-      v = y;
+   // Next we do verticalagainstbottom
+   p.y += m_doc->defaultFont()->tf_Baseline;
+   p.y -= size().y - 4 - m_doc->lineHeight();
+   if (v < p.y)
+      v = p.y;
 
    m_scrollBar->setValue(v);
 }
