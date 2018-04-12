@@ -20,6 +20,7 @@ AQTextEdit::AQTextEdit(AQWidget *parent, bool withScroll)
    , m_doc(new AQTextDoc(this))
    , m_cursor(new AQTextCursor(*m_doc))
    , m_scrollBar(withScroll ? new AQScrollBar(false, this) : 0)
+   , m_auxColumnWidth(0)
 {
    setBgPen(2);
    setExpanding(true, true);
@@ -142,6 +143,12 @@ void AQTextEdit::paste()
    update();
 }
 
+void AQTextEdit::setAuxColumnWidth(int w)
+{
+   m_auxColumnWidth = w;
+   update();
+}
+
 void AQTextEdit::ensureCursorVisible(EnsureType type)
 {
    if (!m_doc)
@@ -153,7 +160,7 @@ void AQTextEdit::ensureCursorVisible(EnsureType type)
 
 
    // First we do horizontal against left side
-   int width = size().x - 4;
+   int width = size().x - 4 - m_auxColumnWidth;
    if (m_scrollBar)
       width -= m_scrollBar->size().x + 2;
 
@@ -199,17 +206,35 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
 #define SHADOW 1
 
    LONG bottom = s.y - 1;
-   LONG right = s.x - 1;
+   LONG right = s.x - 1 ;
 
    if (m_scrollBar)
       right -= m_scrollBar->size().x + 2;
 
    AQRect clipRect(rect);
    clipRect.bottomRight.x = aqMin(right - 2, rect.bottomRight.x);
+   clipRect.topLeft.x = aqMax(2 + m_auxColumnWidth, rect.topLeft.x);
 
    if (rect.bottomRight.x > right) {
       SetAPen(rp, 0);
       RectFill(rp, right, 0, right+2, bottom);
+   }
+
+   if (m_auxColumnWidth && rect.topLeft.x < 2 + m_auxColumnWidth) {
+      SetAPen(rp, 0);
+      RectFill(rp, 1, 0, m_auxColumnWidth, bottom-1);
+      SetAPen(rp, 1);
+      SetFont(rp, m_doc->defaultFont());
+      int b = m_docOffset.y / rp->TxHeight + 1; // +1 to show 1 based
+      int y = rp->TxBaseline + 2;
+      while (y < bottom + rp->TxBaseline - rp->TxHeight) {
+         AQString t = AQString::number(b);
+         Move(rp,m_auxColumnWidth - TextLength(rp, t, t.size()), y);
+         Text(rp, t, t.size());
+         ++b;
+         y += rp->TxHeight;
+      }
+
    }
 
    SetAPen(rp, SHADOW);
@@ -223,14 +248,14 @@ void AQTextEdit::paintEvent(RastPort *rp, const AQRect &rect)
 
    pushClipRect(rp, clipRect);
 
-   ScrollLayer(0, rp->Layer, -2, -2); //offset painting in widget
+   ScrollLayer(0, rp->Layer, -2 - m_auxColumnWidth, -2); //offset painting in widget
 
-   m_doc->render(rp, m_docOffset, AQPoint(right-4, bottom-4));
+   m_doc->render(rp, m_docOffset, AQPoint(right-4-m_auxColumnWidth, bottom-4));
 
    if (hasFocus())
       m_doc->renderCursor(rp, m_cursor, m_docOffset, AQPoint(right-4, bottom-4));
 
-   ScrollLayer(0, rp->Layer, 2, 2); // restore offset
+   ScrollLayer(0, rp->Layer, 2 + m_auxColumnWidth, 2); // restore offset
    restoreClipping(rp);
 }
 
@@ -247,7 +272,7 @@ AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
    AQPoint point = m_doc->pointOfPosition(m_cursor->selectionStart());
    point.y -= m_doc->defaultFont()->tf_Baseline;
    point -= m_docOffset;
-   point += AQPoint(2,2); // we have a frame around the actual doc
+   point += AQPoint(2 + m_auxColumnWidth, 2); // we have a frame around the actual doc
    AQPoint bottom = point;
 
    if (fullLineWidth || m_cursor->hasSelection()) {
@@ -255,7 +280,7 @@ AQRect AQTextEdit::cursorRect(bool fullLineWidth) const
       bottom.y -= m_doc->defaultFont()->tf_Baseline;
       bottom.y += m_doc->defaultFont()->tf_YSize + 1;
       bottom -= m_docOffset;
-      bottom += AQPoint(2,2); // we have a frame around the actual doc
+      bottom += AQPoint(2 + m_auxColumnWidth, 2); // we have a frame around the actual doc
 
       point.x = 2;
       bottom.x = size().x - 4;
@@ -368,6 +393,9 @@ bool AQTextEdit::mouseDoubleClickEvent(const IntuiMessage &msg)
    if (msg.Qualifier & (IEQUALIFIER_LSHIFT | IEQUALIFIER_RSHIFT))
       return true;
 
+   if (msg.MouseX - 2 - m_auxColumnWidth < -1)
+      return true;
+
    m_cursor->select(AQTextCursor::WordUnderCursor);
 
    update();
@@ -381,10 +409,13 @@ bool AQTextEdit::mousePressEvent(const IntuiMessage &msg)
 
    setFocus();
 
-   AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
+   AQPoint clickPoint(msg.MouseX - 2 - m_auxColumnWidth, msg.MouseY - 2);
 
    if (m_scrollBar)
       clickPoint.y += m_docOffset.y;
+
+   if (clickPoint.x < -1)
+      return true; // 
 
    int pos = m_doc->positionOfPoint(clickPoint);   
 
@@ -410,7 +441,7 @@ bool AQTextEdit::mouseMoveEvent(const IntuiMessage &msg)
    if (!m_doc)
       return false;
 
-   AQPoint clickPoint(msg.MouseX - 2, msg.MouseY - 2);
+   AQPoint clickPoint(msg.MouseX - 2 - m_auxColumnWidth, msg.MouseY - 2);
    if (m_scrollBar)
       clickPoint.y += m_docOffset.y;
 

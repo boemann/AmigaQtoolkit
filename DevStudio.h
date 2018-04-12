@@ -60,6 +60,7 @@ private:
    void onRun();
    void onCurrentTabChanged(int i);
    void onTabCloseRequest(int i);
+   void onLineNumbers(int on);
 
    AQTabBar *m_tabBar;
    AQTextEdit *m_textEdit;
@@ -82,6 +83,8 @@ private:
    AQAction *m_pasteAction;
    AQAction *m_findAction;
    AQAction *m_replaceAction;
+
+   AQAction *m_lineNumberAction;
 };
    
 #endif

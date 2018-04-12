@@ -18,6 +18,7 @@ public:
    void setDocument(AQTextDoc *doc, AQTextCursor *cursor);
    AQTextCursor *mainCursor() const;
 
+   void setAuxColumnWidth(int w);
 
    AQScrollBar *verticalScrollBar() const;
 
@@ -63,6 +64,7 @@ private:
    AQAction *m_cutAction;
    AQAction *m_copyAction;
    AQAction *m_pasteAction;
+   int m_auxColumnWidth;
 };
    
 #endif

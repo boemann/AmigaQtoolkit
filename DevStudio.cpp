@@ -248,7 +248,14 @@ DevStudio::DevStudio()
    findPrevAction->setText("Find Previous");
    aqApp->addAction(findPrevAction);
    Connect<FindWidget>(findPrevAction, "triggered", m_findWidget, &FindWidget::findPrevious);
-   
+  
+   m_lineNumberAction = new AQAction(this);
+   m_lineNumberAction->setText("Show Line Numbers?");
+   m_lineNumberAction->setCheckable(true);
+   m_lineNumberAction->setChecked(false);
+   aqApp->addAction(m_lineNumberAction);
+   Connect<DevStudio>(m_lineNumberAction, "triggered", this, &DevStudio::onLineNumbers);
+
    openProject("Work:devel/AQ");
 
    Connect<DevStudio>(aqApp, "readFinished", this, &DevStudio::onReadFinished);
@@ -298,6 +305,10 @@ DevStudio::DevStudio()
    AQMenu *debugMenu = new AQMenu("Debug");
    debugMenu->addAction(runAction);
    menubar->addMenu(debugMenu);
+
+   AQMenu *settingsMenu = new AQMenu("Settings");
+   settingsMenu->addAction(m_lineNumberAction);
+   menubar->addMenu(settingsMenu);
 
    setMenu(menubar);
 
@@ -762,4 +773,8 @@ void DevStudio::onPaste()
 }
 
 
+void DevStudio::onLineNumbers(int on)
+{
+   m_textEdit->setAuxColumnWidth(on ? 32 : 0);
+}
 
