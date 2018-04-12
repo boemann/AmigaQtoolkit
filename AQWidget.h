@@ -83,6 +83,9 @@ public:
    void setFocus();
    bool hasFocus();
 
+   // Set focus action
+   // Triggered when this widget or children have focus
+   // child windows excluded though
    void addAction(AQAction *a);
 
    int contextMenuPolicy() const;

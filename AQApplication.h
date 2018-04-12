@@ -55,6 +55,9 @@ public:
 
    void exit(int code = 0);
 
+   // Set application global action
+   // Triggered unless action from focuswidget and up is triggered first
+   // or unless there is a modal dialog
    void addAction(AQAction *a);
 
    AQClipboard *clipboard() const {return m_clipboard; }

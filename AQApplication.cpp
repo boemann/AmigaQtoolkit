@@ -283,12 +283,23 @@ void AQApplication::processEvents(bool &stayAlive)
 
          if (imsgCopy.Class == IDCMP_VANILLAKEY || imsgCopy.Class == IDCMP_RAWKEY) {
             bool matched = false;
-            for (int i= 0; i < m_actions.size(); ++i) {
-               matched = m_actions[i]->matchShortcut(imsgCopy);
+            AQWidget *receiver = aqApp->focusWidget();
+            while (!matched && receiver) { // first check actions from focus and up
+               for (int i= 0; !matched && i < receiver->m_actions.size(); ++i)
+                  matched = receiver->m_actions[i]->matchShortcut(imsgCopy);
 
-               if (matched)
-                  break;
+               if (receiver->isTopLevel())
+                  receiver = nullptr;
+               else {
+                  receiver = receiver->parent();
+               }
             }
+
+            // application global actions
+            if (!m_modalWindows.size())
+               for (int i= 0; !matched && i < m_actions.size(); ++i)
+                  matched = m_actions[i]->matchShortcut(imsgCopy);
+
             if (matched)
                continue;
          }
@@ -369,6 +380,17 @@ AQScreen *AQApplication::screen(const AQWidget *w) const
 
 AQWidget *AQApplication::focusWidget() const
 {
+   AQWidget *w = m_focusWidget;
+
+   if (!w)
+      return nullptr;
+
+   while (!w->isTopLevel())
+      w = w->parent();
+
+   if (isWindowBlocked(w->m_window))
+      return nullptr;
+
    return m_focusWidget;
 }
 
