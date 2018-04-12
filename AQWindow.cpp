@@ -192,9 +192,19 @@ AQWidget *AQWindow::pickMouseReceiver(IntuiMessage &msg)
 void AQWindow::event(IntuiMessage &msg)
 {
    if (m_window->WLayer->Flags & LAYERREFRESH) {
+      LockLayerInfo(&m_window->WScreen->LayerInfo);
+
+      OrRegionRegion(m_window->WLayer->DamageList, m_dirtyRegion);
+
       BeginRefresh(m_window);
-      paintAll();
-      EndRefresh(m_window, TRUE);
+      EndRefresh(m_window, true);
+
+      Region *oldClip = InstallClipRegion(m_window->WLayer, m_dirtyRegion);
+
+      paintAll(false);
+
+      InstallClipRegion(m_window->WLayer, oldClip);
+      UnlockLayerInfo(&m_window->WScreen->LayerInfo);
    }
    
    switch (msg.Class) {
@@ -412,6 +422,7 @@ void AQWindow::paintDirty()
 
       reg = reg->Next;
    }
+
    ClearRegion(m_dirtyRegion);
    ScrollLayer(0, rp->Layer, -pos.x, -pos.y);
 }
@@ -448,7 +459,7 @@ void AQWindow::markDirty(const AQRect &rect)
    OrRectRegion(m_dirtyRegion, &rectangle);
 }
 
-void AQWindow::paintAll()
+void AQWindow::paintAll(bool trulyAll)
 {
    if (!m_window)
       return;
@@ -504,7 +515,8 @@ void AQWindow::paintAll()
                        , m_clientPos.y + m_widget->size().y - 1};
 
    // anything OR full rect => full rect
-   OrRectRegion(m_dirtyRegion, &rectangle);
+   if (trulyAll)
+      OrRectRegion(m_dirtyRegion, &rectangle);
 
    paintDirty();
 }

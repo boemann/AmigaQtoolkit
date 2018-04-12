@@ -57,7 +57,7 @@ public:
    AQWidget *widget() const;
 
 private:
-   void paintAll();
+   void paintAll(bool trulyAll = true);
    void testFrameClick(const IntuiMessage &msg);
    void hoverTest(const IntuiMessage &msg, bool forceCheck);
    void paintWidget(AQWidget *w, RastPort *rp, AQRect rect, int winBg);
