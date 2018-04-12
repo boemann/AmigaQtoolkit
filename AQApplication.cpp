@@ -293,6 +293,11 @@ void AQApplication::processEvents(bool &stayAlive)
                continue;
          }
 
+
+         if (imsgCopy.Class == IDCMP_INTUITICKS)
+            for (int i = 0; i < m_windows.size(); ++i)
+               m_windows[i]->paintDirty();
+
          for (int i = 0; i < m_windows.size(); ++i) {
             if (imsgCopy.IDCMPWindow == m_windows[i]->m_window) {
                m_windows[i]->event(imsgCopy);

@@ -288,21 +288,17 @@ void AQWindow::event(IntuiMessage &msg)
       break;
    }
    case IDCMP_INTUITICKS:
-      if (aqApp->isWindowBlocked(this))
-         return;
+      if (!aqApp->isWindowBlocked(this))
+         if (m_buttonDownWidget == nullptr && s_mouseGrabWidget == nullptr) {
+            hoverTest(msg, !msg.Qualifier & IEQUALIFIER_LEFTBUTTON);
 
-      if (m_buttonDownWidget == nullptr && s_mouseGrabWidget == nullptr) {
-         hoverTest(msg, !msg.Qualifier & IEQUALIFIER_LEFTBUTTON);
+            if (m_winControl == Hover || m_winControl == 0) {
+               msg.MouseX -= m_clientPos.x;
+               msg.MouseY -= m_clientPos.y;
 
-         if (m_winControl == Hover || m_winControl == 0) {
-            msg.MouseX -= m_clientPos.x;
-            msg.MouseY -= m_clientPos.y;
-
-            aqApp->setHoveredWidget(m_widget->widgetAt(msg.MouseX, msg.MouseY));
+               aqApp->setHoveredWidget(m_widget->widgetAt(msg.MouseX, msg.MouseY));
+            }
          }
-      }
-
-      paintDirty();
       break;
 
    case IDCMP_CHANGEWINDOW: {
