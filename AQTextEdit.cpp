@@ -411,11 +411,10 @@ bool AQTextEdit::mousePressEvent(const IntuiMessage &msg)
 
    AQPoint clickPoint(msg.MouseX - 2 - m_auxColumnWidth, msg.MouseY - 2);
 
-   if (m_scrollBar)
-      clickPoint.y += m_docOffset.y;
-
    if (clickPoint.x < -1)
       return true; // 
+
+   clickPoint += m_docOffset;
 
    int pos = m_doc->positionOfPoint(clickPoint);   
 
@@ -442,8 +441,8 @@ bool AQTextEdit::mouseMoveEvent(const IntuiMessage &msg)
       return false;
 
    AQPoint clickPoint(msg.MouseX - 2 - m_auxColumnWidth, msg.MouseY - 2);
-   if (m_scrollBar)
-      clickPoint.y += m_docOffset.y;
+
+   clickPoint += m_docOffset;
 
    int pos = m_doc->positionOfPoint(clickPoint);
    
