@@ -1,14 +1,56 @@
 #ifndef AQKERNEL_H
 #define AQKERNEL_H
 
-#ifndef __GNUC__
-typedef char bool;
-#define true 1
-#define false 0
-#endif
+#include <sstream>
 
 #define nullptr 0
-   
+
+struct AQDebug
+{
+   AQDebug() : m_space(true) {}
+   ~AQDebug()
+   {
+      std::cout << m_s.str() << std::endl;
+   }
+
+   inline AQDebug &space() { m_space = true; m_s << ' '; return *this; }
+   inline AQDebug &nospace() { m_space = false; return *this; }
+   inline AQDebug &maybeSpace() { if (m_space) m_s << ' '; return *this; }
+
+   inline AQDebug &operator<<(bool t) { m_s << (t ? "true" : "false"); return maybeSpace(); }
+   inline AQDebug &operator<<(char t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(signed short t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(unsigned short t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(signed int t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(unsigned int t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(signed long t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(unsigned long t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(float t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(double t) { m_s << t; return maybeSpace(); }
+   inline AQDebug &operator<<(const char *t) { m_s << t; return maybeSpace(); }
+//   inline AQDebug &operator<<(const QString &t) { m_s << '\"' << t  << '\"'; return maybeSpace(); }
+   inline AQDebug &operator<<(const void * t) { m_s << t; return maybeSpace(); }
+
+private:
+   std::ostringstream m_s;
+   bool m_space;
+};
+
+struct AQNoDebug
+{
+   AQNoDebug() {}
+   ~AQNoDebug() {}
+
+   inline AQNoDebug &space() { return *this; }
+   inline AQNoDebug &nospace() { return *this; }
+   inline AQNoDebug &maybeSpace() { return *this; }
+
+    template<typename T>
+    inline AQNoDebug &operator<<(const T &) { return *this; }
+};
+
+#define aqDebug() AQDebug()
+
 class AQPoint
 {
 public:

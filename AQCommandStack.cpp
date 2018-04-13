@@ -1,6 +1,5 @@
 
 #include <AQCommandStack.h>
-#include <stdio.h>
 
 AQCommand::AQCommand()
 {

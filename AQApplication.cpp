@@ -1,5 +1,5 @@
 #include "AQApplication.h"
-#include <stdio.h>
+
 #include <algorithm>
 
 #include <exec/types.h>
