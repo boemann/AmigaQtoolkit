@@ -17,6 +17,7 @@ public:
    virtual bool isEqual(const ConnectionBase &) {return false;}
    virtual void invoke() {}
    virtual void invoke(int arg) {}
+   virtual void invoke(bool arg) {}
    virtual void invoke(AQObject *arg) {}
    AQString m_signalName;
 };
@@ -29,6 +30,16 @@ public:
       : ConnectionBase(signalName)
       , m_receiver(r)
       , m_methodVoid(method)
+      , m_methodBool(nullptr)
+      , m_methodInt(nullptr)
+      , m_methodObj(nullptr)
+   {
+   }
+   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(bool))
+      : ConnectionBase(signalName)
+      , m_receiver(r)
+      , m_methodVoid(nullptr)
+      , m_methodBool(method)
       , m_methodInt(nullptr)
       , m_methodObj(nullptr)
    {
@@ -37,6 +48,7 @@ public:
       : ConnectionBase(signalName)
       , m_receiver(r)
       , m_methodVoid(nullptr)
+      , m_methodBool(nullptr)
       , m_methodInt(method)
       , m_methodObj(nullptr)
    {
@@ -45,12 +57,19 @@ public:
       : ConnectionBase(signalName)
       , m_receiver(r)
       , m_methodVoid(nullptr)
+      , m_methodBool(nullptr)
       , m_methodInt(nullptr)
       , m_methodObj(method)
    {
    }
 
    Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)())
+      : ConnectionBase(signalName)
+   {
+      registerConnection(sender, new Connect(signalName, r, method));
+   }
+
+   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(bool))
       : ConnectionBase(signalName)
    {
       registerConnection(sender, new Connect(signalName, r, method));
@@ -68,11 +87,20 @@ public:
       registerConnection(sender, new Connect(signalName, r, method));
    }
 
+   void invoke(bool arg)
+   {
+      if (m_methodBool != nullptr)
+         ((m_receiver)->*(m_methodBool))(arg);
+
+      invoke();
+   }
+
    void invoke(int arg)
    {
       if (m_methodInt != nullptr)
          ((m_receiver)->*(m_methodInt))(arg);
 
+      invoke(arg != 0);
       invoke();
    }
 
@@ -102,6 +130,9 @@ public:
       if (m_receiver != o->m_receiver)
          return false;
 
+      if (m_methodBool != o->m_methodBool)
+         return false;
+
       if (m_methodInt != o->m_methodInt)
          return false;
 
@@ -114,6 +145,7 @@ public:
 private:
    Receiver *m_receiver;
    void (Receiver::*m_methodVoid)();
+   void (Receiver::*m_methodBool)(bool);
    void (Receiver::*m_methodInt)(int);
    void (Receiver::*m_methodObj)(AQObject *);
 };
@@ -124,6 +156,12 @@ class Disconnect : public ConnectionBase
 {
 public:
    Disconnect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)())
+      : ConnectionBase(signalName)
+   {
+      unregisterConnection(sender, Connect<Receiver>(signalName, r, method));
+   }
+
+   Disconnect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(bool))
       : ConnectionBase(signalName)
    {
       unregisterConnection(sender, Connect<Receiver>(signalName, r, method));
@@ -151,9 +189,10 @@ public:
 
    void setParent(AQObject *p);
 
+   void emit(const AQString &signalName);
+   void emit(const AQString &signaleName, bool arg);
    void emit(const AQString &signalName, int arg);
    void emit(const AQString &signalName, AQObject *arg);
-   void emit(const AQString &signalName);
 
 friend class ConnectionBase;
 

@@ -116,6 +116,14 @@ void AQObject::emit(const AQString &signalName) {
          c->invoke();
    }
 }
+void AQObject::emit(const AQString &signalName, bool arg) {
+   aqApp->latestSignalSender = this;
+   for (int i= 0; i < m_connections.size(); ++i) {
+      ConnectionBase *c = m_connections[i];
+      if (c->m_signalName == signalName)
+         c->invoke(arg);
+   }
+}
 void AQObject::emit(const AQString &signalName, int arg) {
    aqApp->latestSignalSender = this;
    for (int i= 0; i < m_connections.size(); ++i) {
