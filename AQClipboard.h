@@ -2,12 +2,13 @@
 #define AQCLIPBOARD_H
 
 #include <AQKernel.h>
+#include <AQObject.h>
 
 class AQString;
 class AQApplication;
 class AQClipboardPrivate;
 
-class AQClipboard
+class AQClipboard : public AQObject
 {
 public:
    void setText(const AQString &t);
@@ -18,6 +19,8 @@ public:
 private:
    AQClipboard();
    ~AQClipboard();
+
+   void checkUpdates();
 
    AQClipboardPrivate *m_d;
 };

@@ -44,6 +44,7 @@ AQTextEdit::AQTextEdit(AQWidget *parent, bool withScroll)
    m_pasteAction->setText("Paste");
    m_pasteAction->setShortcut("Amiga+V");
    Connect<AQTextEdit>(m_pasteAction, "triggered", this, &AQTextEdit::paste);
+   Connect<AQAction>(aqApp->clipboard(), "changed", m_pasteAction, &AQAction::setEnabled);
    addAction(m_pasteAction);
 
    if (m_scrollBar) {

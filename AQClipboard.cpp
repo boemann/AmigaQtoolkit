@@ -19,6 +19,7 @@ public:
    struct IOClipReq *ior;
    struct Hook hook;
    struct Task *task;
+   int seen;
 
    bool readLong(ULONG *ldata)
    {
@@ -165,27 +166,17 @@ public:
    }
 };
 
+static int reports=0;
 
-ULONG hookEntry ();
-
-ULONG clipHook (struct Hook *h, VOID *o, struct ClipHookMsg *msg)
+ULONG clipChangedHookEntry()
 {
-   AQClipboard *ac = (AQClipboard *) h->h_Data;
-
-   if (ac) {
-      // Remember the ID of clip
- //     ch->ch_ClipID = msg->chm_ClipID;
-
-      // Signal the task that started the hook
- //     Signal (ch->ch_Task, SIGBREAKF_CTRL_E);
-   }
-
-   return 0;
+   ++reports;
 }
 
 AQClipboard::AQClipboard()
    : m_d(new AQClipboardPrivate)
 {
+   m_d->seen = 0;
    const int unit = 0;
    if (m_d->mp = CreatePort(0L,0))
       if (m_d->ior = (IOClipReq *)CreateExtIO(m_d->mp,sizeof(struct IOClipReq)))
@@ -198,20 +189,20 @@ AQClipboard::AQClipboard()
 
     m_d->task = FindTask (NULL);
 
- //   m_d->hook.h_Entry = hookEntry;
-    m_d->hook.h_SubEntry = (ULONG (*)())clipHook;
-    m_d->hook.h_Data = this;
+    m_d->hook.h_Entry = clipChangedHookEntry;
+    m_d->hook.h_SubEntry = nullptr;
+    m_d->hook.h_Data = m_d;
 
- //   DoIO((IORequest *)m_d->ior);
+    DoIO((IORequest *)m_d->ior);
 }
 
 AQClipboard::~AQClipboard()
 {
    // Remove the hook
- //  m_d->ior->io_Data = (char *) &m_d->hook;
+   m_d->ior->io_Data = (char *) &m_d->hook;
    m_d->ior->io_Length = 0;
    m_d->ior->io_Command = CBD_CHANGEHOOK;
- //  DoIO((IORequest *)m_d->ior);
+   DoIO((IORequest *)m_d->ior);
 
 
    CloseDevice((IORequest *)m_d->ior);
@@ -219,6 +210,20 @@ AQClipboard::~AQClipboard()
    DeletePort(m_d->mp);
 
    delete m_d;
+}
+
+void AQClipboard::checkUpdates()
+{
+   int d = reports - m_d->seen;
+   m_d->seen += d;
+
+   if (d) {
+      bool has = m_d->isFTXTAvail();
+      if (has)
+         m_d->readDone();
+
+      emit("changed", has);
+   }
 }
 
 void AQClipboard::setText(const AQString &t)

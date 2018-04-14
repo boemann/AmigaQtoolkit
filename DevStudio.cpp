@@ -11,6 +11,7 @@
 #include <AQMenu.h>
 #include <AQCommandStack.h>
 #include <AQTabBar.h>
+#include <AQClipboard.h>
 
 #include <proto/dos.h>
 
@@ -137,6 +138,7 @@ DevStudio::DevStudio()
    m_pasteAction->setShortcut("Amiga+V");
    m_pasteAction->setText("Paste");
    Connect<DevStudio>(m_pasteAction, "triggered", this, &DevStudio::onPaste);
+   Connect<AQAction>(aqApp->clipboard(), "changed", m_pasteAction, &AQAction::setEnabled);
    aqApp->addAction(m_pasteAction);
 
    AQAction *clearFindAction = new AQAction(this);
@@ -666,6 +668,8 @@ void DevStudio::onCursorPositionChanged(AQObject *obj)
          t += " Col: ";
          t += AQString::number(1 + cursor->positionInBlock());
          m_positionLabel->setText(t, false);
+         m_cutAction->setEnabled(cursor->hasSelection());
+         m_copyAction->setEnabled(cursor->hasSelection());
          return;
       }
       it++;

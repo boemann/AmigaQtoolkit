@@ -324,6 +324,8 @@ void AQApplication::processEvents(bool &stayAlive)
             }
          }
 
+         m_clipboard->checkUpdates();
+
          AQToolTip::checkShow(m_hoveredWidget);
       }
       while (stayAlive && (!m_closing) && (asyncMsg = GetMsg(m_asyncFilePort))) {
