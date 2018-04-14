@@ -200,7 +200,7 @@ void FindWidget::onFindLineChanged()
 }
 
 
-void FindWidget::onWholeWordChanged(int on)
+void FindWidget::onWholeWordChanged(bool on)
 {
    if (on)
       m_findFlag = m_findFlag | AQTextDoc::WholeWord;
@@ -210,7 +210,7 @@ void FindWidget::onWholeWordChanged(int on)
    updateFindResults();
 }
 
-void FindWidget::onCaseSensitiveChanged(int on)
+void FindWidget::onCaseSensitiveChanged(bool on)
 {
    if (on)
       m_findFlag = m_findFlag | AQTextDoc::CaseInsensitively;

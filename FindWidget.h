@@ -25,8 +25,8 @@ public:
    void replaceAll();
 
    void onFindLineChanged();
-   void onWholeWordChanged(int on);
-   void onCaseSensitiveChanged(int on);
+   void onWholeWordChanged(bool on);
+   void onCaseSensitiveChanged(bool on);
 
    void activateFind();
    void activateReplace();

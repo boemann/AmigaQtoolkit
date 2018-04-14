@@ -24,7 +24,7 @@ public:
    AQString tabToolTip(int index) const;
 
 private:
-   void onTabClicked(int on);
+   void onTabClicked(bool on);
    void onTabCloseClicked();
 
    AQLayout *m_layout;

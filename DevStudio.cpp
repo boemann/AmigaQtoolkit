@@ -777,7 +777,7 @@ void DevStudio::onPaste()
 }
 
 
-void DevStudio::onLineNumbers(int on)
+void DevStudio::onLineNumbers(bool on)
 {
    m_textEdit->setAuxColumnWidth(on ? 32 : 0);
 }

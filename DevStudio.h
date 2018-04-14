@@ -60,7 +60,7 @@ private:
    void onRun();
    void onCurrentTabChanged(int i);
    void onTabCloseRequest(int i);
-   void onLineNumbers(int on);
+   void onLineNumbers(bool on);
 
    AQTabBar *m_tabBar;
    AQTextEdit *m_textEdit;

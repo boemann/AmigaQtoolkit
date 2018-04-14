@@ -82,7 +82,7 @@ void AQTabBar::setCurrentIndex(int index)
 }
 
 
-void AQTabBar::onTabClicked(int on)
+void AQTabBar::onTabClicked(bool on)
 {
    AQButton *button = dynamic_cast<AQButton *>(aqApp->latestSignalSender);
 
