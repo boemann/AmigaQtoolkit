@@ -62,6 +62,7 @@ FindWidget::FindWidget(AQTextEdit *textEdit, AQWidget *parent)
    b->setToolTip("Match case");
    b->setIcon(AQIcon("matchcase"));
    b->setCheckable(true);
+   b->setChecked(true);
    upperbuttonsL->addWidget(b);
    Connect<FindWidget>(b, "clicked", this, &FindWidget::onCaseSensitiveChanged);
 
@@ -213,9 +214,9 @@ void FindWidget::onWholeWordChanged(bool on)
 void FindWidget::onCaseSensitiveChanged(bool on)
 {
    if (on)
-      m_findFlag = m_findFlag | AQTextDoc::CaseInsensitively;
-   else
       m_findFlag = m_findFlag & ~AQTextDoc::CaseInsensitively;
+   else
+      m_findFlag = m_findFlag | AQTextDoc::CaseInsensitively;
 
    updateFindResults();
 }
