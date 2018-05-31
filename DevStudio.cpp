@@ -1,5 +1,6 @@
 #include <AQScrollBar.h>
-#include <AQDialog.h>
+#include <AQFileDialog.h>
+#include <AQMessageBox.h>
 #include <AQTextEdit.h>
 #include <AQTextDoc.h>
 #include <AQLayout.h>
@@ -369,8 +370,8 @@ DevStudio::~DevStudio()
 
 void DevStudio::openProject()
 {
-   AQDialog *dialog = new AQDialog(AQDialog::OpenButton | AQDialog::CancelButton
-                  | AQDialog::SelectionName | AQDialog::DrawerMode);
+   AQFileDialog *dialog = new AQFileDialog(AQFileDialog::OpenButton | AQFileDialog::CancelButton
+                  | AQFileDialog::SelectionName | AQFileDialog::DrawerMode, this);
    dialog->setWindowTitle("Open Project");
    if (m_project)
       dialog->setDrawer(m_project->projectPath());
@@ -400,8 +401,8 @@ void DevStudio::openProject(const AQString &projectPath)
 
 void DevStudio::openFile()
 {
-   AQDialog *dialog = new AQDialog(AQDialog::OpenButton | AQDialog::CancelButton
-                  | AQDialog::SelectionName);
+   AQFileDialog *dialog = new AQFileDialog(AQFileDialog::OpenButton | AQFileDialog::CancelButton
+                  | AQFileDialog::SelectionName, this);
    dialog->setWindowTitle("Open File");
 
    // Let's figure out what folder to start dialog in
@@ -455,8 +456,17 @@ void DevStudio::closeFile(const AQString &path)
    if (it == m_loadedDocs.end())
       return;
 
-   if (!it->second->commandStack->isClean())
-printf("%s\nIs not saved. Are you sure you want to close?\n", (char *)path);
+   if (!it->second->commandStack->isClean()) {
+      AQMessageBox *dialog = new AQMessageBox(AQMessageBox::OkButton |
+                               AQMessageBox::CancelButton, this);
+      dialog->setWindowTitle("File Changed");
+//path+"\nWhat do you want to do?\n";
+
+
+      if (!dialog->exec()) {
+         return;
+      }
+   }
 
 
    m_loadedDocs.erase(path);
@@ -511,8 +521,8 @@ void DevStudio::saveFile()
 
 void DevStudio::saveFileAs()
 {
-   AQDialog *dialog = new AQDialog(AQDialog::SaveButton | AQDialog::CancelButton
-                  | AQDialog::SelectionName);
+   AQFileDialog *dialog = new AQFileDialog(AQFileDialog::SaveButton | AQFileDialog::CancelButton
+                  | AQFileDialog::SelectionName, this);
    dialog->setWindowTitle("Save File As");
 
    // Let's figure out what folder to start dialog in

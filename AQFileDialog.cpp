@@ -1,4 +1,4 @@
-#include "AQDialog.h"
+#include "AQFileDialog.h"
 
 #include <stdio.h>
 
@@ -22,13 +22,15 @@
 #include <AQSplitter.h>
 #include <AQApplication.h>
 
-AQDialog::AQDialog(UWORD features, AQWidget *parent)
+AQFileDialog::AQFileDialog(UWORD features, AQWidget *parent)
    : AQWidget(parent)
    , m_selectName(nullptr)
    , m_drawerMode(features & DrawerMode)
    , m_drawerIsSet(false)
 {
    setBgPen(-2); // no bg and only subwidgets
+   setWindowFlags(AQWindow::TitleBar | AQWindow::RightSizer
+                      | AQWindow::LeftSizer | AQWindow::BottomSizer);
 
    AQLayout *overallLayout = new AQLayout(false);
    AQLayout *locationLayout = new AQLayout(true);
@@ -40,7 +42,7 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
    if (features & SaveButton) {
       AQButton *b = new AQButton(false, this);
       b->setText("Save");
-      Connect<AQDialog>(b, "clicked", this, &AQDialog::accept);
+      Connect<AQFileDialog>(b, "clicked", this, &AQFileDialog::accept);
       buttonLayout->addWidget(b);
    }
    if (features & OpenButton) {
@@ -49,14 +51,14 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
          b->setText("Select drawer");
       else
          b->setText("Open");
-      Connect<AQDialog>(b, "clicked", this, &AQDialog::accept);
+      Connect<AQFileDialog>(b, "clicked", this, &AQFileDialog::accept);
       buttonLayout->addWidget(b);
    }
    if (features & CancelButton) {
       AQButton *b = new AQButton(false, this);
       b->setText("Cancel");
       b->setToolTip("Close dialog without doing anything");
-      Connect<AQDialog>(b, "clicked", this, &AQDialog::dismiss);
+      Connect<AQFileDialog>(b, "clicked", this, &AQFileDialog::dismiss);
       buttonLayout->addWidget(b);
    }
    
@@ -72,18 +74,18 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
    b->setIcon(AQIcon("levelup"));
    b->setToolTip("Parent folder");
    locationLayout->addWidget(b);
-   Connect<AQDialog>(b, "clicked", this, &AQDialog::onCdUp);
+   Connect<AQFileDialog>(b, "clicked", this, &AQFileDialog::onCdUp);
    m_locationName = new AQLineEdit(this);
    locationLayout->addWidget(m_locationName);
    m_drawerView = new AQListView();
    m_drawerView->setExpanding(false, true);
-   Connect<AQDialog>(m_drawerView, "itemActivated", this, &AQDialog::onItemActivated);
-   Connect<AQDialog>(m_drawerView, "itemExpanded", this, &AQDialog::onItemExpanded);
+   Connect<AQFileDialog>(m_drawerView, "itemActivated", this, &AQFileDialog::onItemActivated);
+   Connect<AQFileDialog>(m_drawerView, "itemExpanded", this, &AQFileDialog::onItemExpanded);
 
    m_filesView = new AQListView();
    m_filesView->setTreeMode(false);
-   Connect<AQDialog>(m_filesView, "itemActivated", this, &AQDialog::onFileItemActivated);
-   Connect<AQDialog>(m_filesView, "itemDoubleClicked", this, &AQDialog::onFileItemDoubleClicked);
+   Connect<AQFileDialog>(m_filesView, "itemActivated", this, &AQFileDialog::onFileItemActivated);
+   Connect<AQFileDialog>(m_filesView, "itemDoubleClicked", this, &AQFileDialog::onFileItemDoubleClicked);
 
    if (features & SelectionName) {
       AQLabel *label = new AQLabel(this);
@@ -108,19 +110,29 @@ AQDialog::AQDialog(UWORD features, AQWidget *parent)
    else
       delete buttonLayout;
 
-   setSize(AQPoint(400,300));
+   setPreferredSize(AQPoint(400,300));
 
    populateDrawerView();
 
    setLayout(overallLayout);
+
+   if (parent) {
+      AQPoint p = parent->size();
+      p.x /= 2;
+      p.y /= 2;
+      p.x -= size().x / 2;
+      p.y -= size().y / 2;
+
+      setPos(parent->pos() + p);
+   }
 }
 
-AQDialog::~AQDialog()
+AQFileDialog::~AQFileDialog()
 {
 
 }
 
-int AQDialog::exec()
+int AQFileDialog::exec()
 {
    setWindowModality(2);
    show();
@@ -130,31 +142,31 @@ int AQDialog::exec()
    return m_return;
 }
 
-void AQDialog::accept()
+void AQFileDialog::accept()
 {
    m_return = 1;
    hide();
    m_visible = false;
 }
 
-void AQDialog::dismiss()
+void AQFileDialog::dismiss()
 {
    m_return = 0;
    hide();
    m_visible = false;
 }
 
-void AQDialog::onCdUp()
+void AQFileDialog::onCdUp()
 {
    setDrawer(qCdUp(drawer()));
 }
 
-AQString AQDialog::drawer() const
+AQString AQFileDialog::drawer() const
 {
    return m_locationName->text();
 }
 
-void AQDialog::setDrawer(const AQString &drawerPath)
+void AQFileDialog::setDrawer(const AQString &drawerPath)
 {
    if (!qIsFolder(drawerPath)) {
       return;
@@ -174,7 +186,7 @@ void AQDialog::setDrawer(const AQString &drawerPath)
    m_drawerIsSet = true;
 }
 
-AQString AQDialog::selectedPath() const
+AQString AQFileDialog::selectedPath() const
 {
    AQString p = drawer();
 
@@ -190,7 +202,7 @@ AQString AQDialog::selectedPath() const
       return p + "/" + m_selectName->text();
 }
 
-void AQDialog::closeEvent()
+void AQFileDialog::closeEvent()
 {
    dismiss();
 }
@@ -203,7 +215,7 @@ bool order(const AQListItem *lhs, const AQListItem *rhs)
    return strcmp(lhs->text(0), rhs->text(0)) < 0;
 }
 
-void AQDialog::populateDrawer(AQListItem *drawerItem, bool alsoFiles)
+void AQFileDialog::populateDrawer(AQListItem *drawerItem, bool alsoFiles)
 {
    const int bufsize = 512;
    bool more;
@@ -268,7 +280,7 @@ void AQDialog::populateDrawer(AQListItem *drawerItem, bool alsoFiles)
    drawerItem->sortChildren(order);
 }
 
-void AQDialog::populateDrawerView()
+void AQFileDialog::populateDrawerView()
 {
    AQListItem *favorites= new AQListItem(m_drawerView);
    favorites->setText(0, "Favorites");
@@ -293,7 +305,7 @@ void AQDialog::populateDrawerView()
    m_drawerView->addTopLevelItem(volumes);
 }
 
-void AQDialog::onItemExpanded(AQObject *obj)
+void AQFileDialog::onItemExpanded(AQObject *obj)
 {
    AQListItem *item = (AQListItem *)(obj);
    if (item->childCount() == 0) {
@@ -301,14 +313,14 @@ void AQDialog::onItemExpanded(AQObject *obj)
    }
 }
 
-void AQDialog::onItemActivated(AQObject *obj)
+void AQFileDialog::onItemActivated(AQObject *obj)
 {
    AQListItem *item = (AQListItem *)(obj);
 
    setDrawer(item->text(1));
 }
 
-void AQDialog::onFileItemActivated(AQObject *obj)
+void AQFileDialog::onFileItemActivated(AQObject *obj)
 {
    if (m_selectName) {
       AQListItem *item = (AQListItem *)(obj);
@@ -320,7 +332,7 @@ void AQDialog::onFileItemActivated(AQObject *obj)
    }
 }
 
-void AQDialog::onFileItemDoubleClicked(AQObject *obj)
+void AQFileDialog::onFileItemDoubleClicked(AQObject *obj)
 {
    AQListItem *item = (AQListItem *)(obj);
    AQString path(m_filesView->rootItem()->text(1));

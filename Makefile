@@ -17,7 +17,8 @@ SRCS = AQApplication.cpp \
        AQToolTip.cpp \
        AQIcon.cpp \
        AQLayout.cpp \
-       AQDialog.cpp \
+       AQFileDialog.cpp \
+       AQMessageBox.cpp \
        AQListView.cpp \
        AQScrollBar.cpp \
        AQStatusBar.cpp \
@@ -49,7 +50,8 @@ HDRS = AQApplication.h \
        AQToolTip.h \
        AQIcon.h \
        AQLayout.h \
-       AQDialog.h \
+       AQFileDialog.h \
+       AQMessageBox.h \
        AQListView.h \
        AQScrollBar.h \
        AQSplitter.h \

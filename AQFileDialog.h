@@ -8,7 +8,7 @@ class AQListView;
 class AQListItem;
 class AQLineEdit;
 
-class AQDialog : public AQWidget
+class AQFileDialog : public AQWidget
 {
 public:
    enum Buttons {
@@ -19,8 +19,8 @@ public:
     , DrawerMode=0x0010
    };
 
-   AQDialog(UWORD buttons, AQWidget *parent = nullptr);
-   ~AQDialog();
+   AQFileDialog(UWORD buttons, AQWidget *parent = nullptr);
+   ~AQFileDialog();
 
    int exec();
 

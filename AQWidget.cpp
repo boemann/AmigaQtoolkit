@@ -110,7 +110,7 @@ void AQWidget::setVisible(bool visible)
 
 bool AQWidget::isTopLevel() const
 {
-   return (!m_parent) || (m_windowFlags & AQWindow::Popup);
+   return (!m_parent) || (m_windowFlags & AQWindow::Popup) || m_windowModality > 0;
 }
 
 
