@@ -19,6 +19,7 @@ public:
    virtual void setPos(const AQPoint &pos) {m_widget->setPos(pos); }
    virtual AQPoint pos() const { return m_widget->pos(); }
    virtual bool contributes() const {return m_widget->m_visible; }
+   AQWidget *widget() {return m_widget;}
 
 private:
    AQWidget *m_widget;
@@ -53,6 +54,9 @@ public:
    
    void addWidget(AQWidget *w);
    void addItem(AQLayoutItem *item);
+
+   void removeWidget(AQWidget *w);
+   void removeItem(AQLayoutItem *item);
 
    int count() const;
 

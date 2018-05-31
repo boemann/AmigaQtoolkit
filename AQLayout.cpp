@@ -1,6 +1,8 @@
 #include "AQWidget.h"
 #include "AQLayout.h"
 
+#include <algorithm>
+
 AQLayoutItem::AQLayoutItem(AQWidget *w)
    : m_widget(w)
 {
@@ -34,6 +36,25 @@ void AQLayout::addWidget(AQWidget *w)
 void AQLayout::addItem(AQLayoutItem *item)
 {
    m_items.push_back(item);
+   invalidate();
+}
+
+void AQLayout::removeWidget(AQWidget *w)
+{
+   for (int i = 0; i < m_items.size(); ++i) {
+      if (m_items[i]->widget()	 == w) {
+         removeItem(m_items[i]);
+         break;
+      }
+   }
+}
+
+void AQLayout::removeItem(AQLayoutItem *item)
+{
+   m_items.erase(std::remove(m_items.begin(), m_items.end(), item), m_items.end());
+
+   delete item;
+
    invalidate();
 }
 
