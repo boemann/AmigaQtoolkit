@@ -274,8 +274,17 @@ void AQApplication::processEvents(bool &stayAlive)
 
          AQToolTip::filterIntuiMessage(imsgCopy);
 
+         AQWindow *window = nullptr;
+         for (int i = 0; i < m_windows.size(); ++i) {
+            if (imsgCopy.IDCMPWindow == m_windows[i]->m_window) {
+               window = m_windows[i];
+               break;
+            }
+         }
+
          if (imsgCopy.Class == IDCMP_ACTIVEWINDOW) {
             if (m_popupWindows.size()) {
+               window->paintBorder();
                continue;
             } else if (m_modalWindows.size())
                if (imsgCopy.IDCMPWindow != m_modalWindows[m_modalWindows.size()-1]->m_window) { {
@@ -285,6 +294,7 @@ void AQApplication::processEvents(bool &stayAlive)
             }
          } else if (imsgCopy.Class == IDCMP_INACTIVEWINDOW) {
             if (m_popupWindows.size()) {
+               window->paintBorder();
                continue;
             }
          }
@@ -317,13 +327,9 @@ void AQApplication::processEvents(bool &stayAlive)
             for (int i = 0; i < m_windows.size(); ++i)
                m_windows[i]->paintDirty();
 
-         for (int i = 0; i < m_windows.size(); ++i) {
-            if (imsgCopy.IDCMPWindow == m_windows[i]->m_window) {
-               m_windows[i]->event(imsgCopy);
-               break;
-            }
-         }
+         window->event(imsgCopy);
 
+        
          m_clipboard->checkUpdates();
 
          AQToolTip::checkShow(m_hoveredWidget);

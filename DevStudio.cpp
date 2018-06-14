@@ -315,7 +315,7 @@ DevStudio::DevStudio()
 
    setMenu(menubar);
 
-   setPreferredSize(AQPoint(640, 496));
+   setPreferredSize(AQPoint(640, 488));
 }
 
 void DevStudio::onReadFinished()

@@ -23,19 +23,16 @@ public:
       WidgetArea = 0x00,  // always present
       LeftSizer = 0x01,
       RightSizer = 0x02,
-      TopSizer = 0x04 ,
-      BottomSizer = 0x08,
-      CloseButton = 0x10,
-      TitleBar = 0x20,
-      MaximizeButton = 0x40,
-      MinimizeButton = 0x80,
+      BottomSizer = 0x04,
+      CloseButton = 0x08,
+      TitleBar = 0x10,
       Normal = 0xFF,
       Hover = 0x8000,
       Popup = 0x100,
       ToolTip = 0x300 // A popup that doesn't activate
    };
 
-   AQWindow(AQWidget *widget, int modality, UWORD flags);
+   AQWindow(AQWidget *widget, int modality, ULONG flags);
    ~AQWindow();
 
    void hide();
@@ -49,6 +46,7 @@ public:
 
    AQPoint clientOffset() const;
 
+   void paintBorder();
    void paintDirty();
 
    void event(IntuiMessage &msg);   

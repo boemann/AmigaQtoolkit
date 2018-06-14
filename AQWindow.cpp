@@ -1,4 +1,4 @@
-#include "AQWindow.h"
+ #include "AQWindow.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@ void backfill()
 
 Hook refreshHook;
 
-AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
+AQWindow::AQWindow(AQWidget *widget, int modality, ULONG flags)
    : m_window(nullptr)
    , m_active((flags & ToolTip) != ToolTip)
    , m_winControl(WidgetArea)
@@ -45,15 +45,24 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    else
       aqApp->registerWindow(this);
 
-   if (m_flags & (TitleBar | CloseButton | MinimizeButton | MaximizeButton)) {
-      m_border = AQPoint(4, 3);
-      m_titleHeight = m_screen->m_drawInfo->dri_Font->tf_YSize;
+   if (m_flags & (TitleBar | CloseButton)) {
+      m_border = AQPoint(4,2);//(4, 3);
+      m_titleHeight = m_screen->m_drawInfo->dri_Font->tf_YSize + 2;
    } else  {
       m_border = AQPoint(0,0);
       m_titleHeight = 0;
    }
 
    AQPoint prefSize = widget->preferredSize() + m_border + m_border;
+   prefSize.y += m_titleHeight;
+
+   ULONG borderflag = 0;
+   if (m_flags & CloseButton)
+      borderflag |= WFLG_CLOSEGADGET;
+   if ((m_flags & TitleBar) && m_widget->m_windowModality == 0)
+      borderflag |= WFLG_DEPTHGADGET;
+   if ((m_flags & TitleBar) == 0 && !borderflag)
+      borderflag = WFLG_BORDERLESS;
 
    m_window = OpenWindowTags(NULL,
    WA_Width, prefSize.x,
@@ -61,10 +70,11 @@ AQWindow::AQWindow(AQWidget *widget, int modality, UWORD flags)
    WA_Left, widget->pos().x,
    WA_Top, widget->pos().y,
    WA_Activate, m_active,
-   WA_Flags, WFLG_BORDERLESS | WFLG_RMBTRAP,
+   WA_Flags, WFLG_RMBTRAP | borderflag,
+   (flags & AQWindow::TitleBar ? WA_Title : TAG_SKIP), (ULONG)(char *)m_widget->m_title,
    WA_SimpleRefresh, TRUE,
-   WA_MinWidth, 5,
-   WA_MinHeight, 5,
+   WA_MinWidth, 15,
+   WA_MinHeight, 15,
    WA_ReportMouse, TRUE,
    WA_NewLookMenus, TRUE,
    WA_CustomScreen, (ULONG)m_screen->m_screen,
@@ -205,6 +215,7 @@ void AQWindow::event(IntuiMessage &msg)
 
       InstallClipRegion(m_window->WLayer, oldClip);
       UnlockLayerInfo(&m_window->WScreen->LayerInfo);
+      paintBorder();
    }
    
    switch (msg.Class) {
@@ -315,6 +326,7 @@ void AQWindow::event(IntuiMessage &msg)
    }
             
    case IDCMP_ACTIVEWINDOW:
+      paintBorder();
       if (m_active)
          break;
       m_active = true;
@@ -455,56 +467,45 @@ void AQWindow::markDirty(const AQRect &rect)
    OrRectRegion(m_dirtyRegion, &rectangle);
 }
 
-void AQWindow::paintAll(bool trulyAll)
+void AQWindow::paintBorder()
 {
-   if (!m_window)
+   if (m_border.x == 0)
       return;
+
+   ULONG old = m_window->Flags;
+
+   m_window->Flags = (m_window->Flags & ~WFLG_WINDOWACTIVE);
+   m_window->Flags |= m_active ? WFLG_WINDOWACTIVE : 0;
+   RefreshWindowFrame(m_window);
+
+   m_window->Flags = old;
+
 
    RastPort *rp = m_window->RPort;
    WORD h = m_window->Height - 1;
    WORD w = m_window->Width - 1;
 
-   if (m_active) {
-      SetRast(rp, 0);//m_drawInfo->dri_Pens[FILLPEN]);
+   //SetRast(rp, 0);
+   SetAPen(rp, m_screen->m_drawInfo->dri_Pens[BACKGROUNDPEN]);
+
+   int top = m_border.y + m_titleHeight - 1;
+   RectFill(rp, m_border.x-1, top, w-m_border.x+1, top);
+   RectFill(rp, m_border.x-1, top, m_border.x-1, h-1);
+   RectFill(rp, w-m_border.x, top, w - m_border.x+2, h-2);
+
+   if (m_active)
       SetAPen(rp, m_screen->m_drawInfo->dri_Pens[FILLPEN]);
-      SetBPen(rp, m_screen->m_drawInfo->dri_Pens[FILLPEN]);
-   } else {
-      SetRast(rp, 0);
-      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[BACKGROUNDPEN]);
-      SetBPen(rp, m_screen->m_drawInfo->dri_Pens[BACKGROUNDPEN]);
-   }
 
-   RectFill(rp, 2, 1, w - 1, m_border.y + m_titleHeight - 2);
-   RectFill(rp, 0, 1, 2, h-1);
-   RectFill(rp, w-2, 1, w, h-1);
-   RectFill(rp, 1, h, w-1, h);
+   RectFill(rp, m_border.x, h-1,  w - m_border.x+2, h - 1);
+}
 
-   SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHADOWPEN]);
-   Move(rp, w-1, 1); // inner line right side
-   Draw(rp, w-1, h - 1);
-   Draw(rp, 1, h - 1); // bottom line
-   SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHINEPEN]);
-   Move(rp, 1, h - 1);
-   Draw(rp, 1, 0); // inner line left side
-   Draw(rp, w - 1, 0); // top line 
-   
-   // Draw the title
-   if (m_flags & TitleBar) {
-      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[TEXTPEN]);
-      Move(rp, m_border.x + 10 + rp->TxWidth, m_border.y - 2 + rp->TxBaseline);   
-      Text(rp, m_widget->m_title, m_widget->m_title.size());
-   }
-      
-   // Draw the close button
-   if (m_flags & CloseButton) {
-      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHADOWPEN]);
-      int tx = m_border.x;
-      int ty = m_border.y;
-      RectFill(rp, tx + 1 , ty, tx + 5, ty + 3);
-      SetAPen(rp, m_screen->m_drawInfo->dri_Pens[SHINEPEN]);
-      RectFill(rp, tx + 2, ty + 1, tx + 4, ty + 2);
-   }
- 
+void AQWindow::paintAll(bool trulyAll)
+{
+   if (!m_window)
+      return;
+
+   paintBorder();
+
    // Finally draw the widget
    Rectangle rectangle = {m_clientPos.x, m_clientPos.y
                        , m_clientPos.x + m_widget->size().x - 1
@@ -528,12 +529,6 @@ void AQWindow::testFrameClick(const IntuiMessage &msg)
       switch (m_winControl) {
       case Flags(WidgetArea | Hover): // user area
       case WidgetArea:
-      case Flags(CloseButton | Hover): // close
-      case CloseButton:
-      case Flags(MaximizeButton | Hover): // maximize
-      case MaximizeButton:
-      case Flags(MinimizeButton | Hover): // minimize
-      case MinimizeButton:
          break;
       default: // title and size should raise
          WindowToFront(m_window);
@@ -542,19 +537,7 @@ void AQWindow::testFrameClick(const IntuiMessage &msg)
       return;
    }
 
-   if (msg.Code == SELECTUP) {
-      switch (m_winControl & (CloseButton | MaximizeButton | MinimizeButton)) {
-      case CloseButton:
-         m_widget->closeEvent();
-         break;
-      case MaximizeButton:
-         break;
-      case MinimizeButton:
-         break;
-      }
-   }
    m_winControl = WidgetArea; // do this or we will keep size / move
-
 }
 
 void AQWindow::hoverTest(const IntuiMessage &msg, bool forceSet)
@@ -563,7 +546,7 @@ void AQWindow::hoverTest(const IntuiMessage &msg, bool forceSet)
       m_winControl = WidgetArea;
       return;
    }
-   if (forceSet || (m_winControl & (CloseButton|MaximizeButton|MinimizeButton))) {
+   if (forceSet) {
       WORD x = msg.MouseX;
       WORD y = msg.MouseY;
              
@@ -578,23 +561,12 @@ void AQWindow::hoverTest(const IntuiMessage &msg, bool forceSet)
                winControl = RightSizer;
          }
        
-        if ((m_flags & TopSizer) && y < m_border.y - 1)
-           winControl |= TopSizer;
-        else if ((m_flags & BottomSizer) && y >= m_window->Height - m_border.y)
+        if ((m_flags & BottomSizer) && y >= m_window->Height - m_border.y)
            winControl |= BottomSizer;
        
         if (!winControl && y < m_border.y + m_titleHeight) {          
-           if ((m_flags & CloseButton) && x < m_border.x + 10)
-              winControl = CloseButton; // close
-           else {
-              x += m_border.x - m_window->Width; // rel to inner right
-              if (x > - 20) //but top right
-                 winControl = MaximizeButton;
-              else if (x > - 40) // but 2 top right
-                 winControl = MinimizeButton;
-              else if ((m_flags & TitleBar))
-                 winControl = TitleBar;
-           }
+           if ((m_flags & TitleBar))
+              winControl = TitleBar;
         }
      }    
      if (forceSet) {
@@ -621,11 +593,6 @@ void AQWindow::hoverTest(const IntuiMessage &msg, bool forceSet)
          dx = msg.MouseX - m_x;
          if(calculatedAllowance.x - dx < 0)
             dx = calculatedAllowance.x;
-      }
-      if (m_winControl & TopSizer) {
-         dy = msg.MouseY - m_y;
-         if(calculatedAllowance.y - dy < 0)
-            dy = calculatedAllowance.y;
       }
       if (m_winControl & RightSizer) {
          dw = msg.MouseX - m_x;
