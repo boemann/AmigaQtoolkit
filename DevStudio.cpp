@@ -457,14 +457,19 @@ void DevStudio::closeFile(const AQString &path)
       return;
 
    if (!it->second->commandStack->isClean()) {
-      AQMessageBox *dialog = new AQMessageBox(AQMessageBox::OkButton |
-                               AQMessageBox::CancelButton, this);
-      dialog->setWindowTitle("File Changed");
-//path+"\nWhat do you want to do?\n";
+      AQMessageBox *dialog = new AQMessageBox("File Changed"
+               , "You are closing a modified file"
+               , AQMessageBox::Save | AQMessageBox::DontSave | AQMessageBox::Cancel
+               , this);
 
-
-      if (!dialog->exec()) {
+      switch (dialog->exec()) {
+      case 0:
          return;
+      case 1: // save
+         it->second->doc->saveFile(it->first);
+         it->second->commandStack->setClean();
+      case 2: // don't save
+         break;
       }
    }
 

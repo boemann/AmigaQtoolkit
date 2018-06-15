@@ -22,30 +22,52 @@
 #include <AQSplitter.h>
 #include <AQApplication.h>
 
-AQMessageBox::AQMessageBox(UWORD features, AQWidget *parent)
+AQMessageBox::AQMessageBox(const AQString &title, const AQString &text, UWORD features, AQWidget *parent)
    : AQWidget(parent)
 {
    setBgPen(-2); // no bg and only subwidgets
    setWindowFlags(AQWindow::TitleBar);
    setWindowModality(2);
 
+   setWindowTitle(title);
+
    AQLayout *overallLayout = new AQLayout(false);
+
+   AQLabel *l = new AQLabel(this);
+   l->setText(text);
+   overallLayout->addWidget(l);
+
+
+
+
    AQLayout *buttonLayout = new AQLayout(true);
 
    buttonLayout->addItem(new AQSpacerItem(AQPoint(0,0),true,false));
-   if (features & OkButton) {
+   if (features & Ok) {
       AQButton *b = new AQButton(false, this);
       b->setText("Ok");
       Connect<AQMessageBox>(b, "clicked", this, &AQMessageBox::accept);
       buttonLayout->addWidget(b);
    }
-   if (features & CancelButton) {
+   if (features & Save) {
+      AQButton *b = new AQButton(false, this);
+      b->setText("Save");
+      Connect<AQMessageBox>(b, "clicked", this, &AQMessageBox::accept);
+      buttonLayout->addWidget(b);
+   }
+   if (features & DontSave) {
+      AQButton *b = new AQButton(false, this);
+      b->setText("Don't Save");
+      Connect<AQMessageBox>(b, "clicked", this, &AQMessageBox::destroy);
+      buttonLayout->addWidget(b);
+   }
+   if (features & Cancel) {
       AQButton *b = new AQButton(false, this);
       b->setText("Cancel");
       b->setToolTip("Close dialog without doing anything");
       Connect<AQMessageBox>(b, "clicked", this, &AQMessageBox::dismiss);
       buttonLayout->addWidget(b);
-   }
+   } 
    
 
    if (buttonLayout->count())
@@ -59,8 +81,8 @@ AQMessageBox::AQMessageBox(UWORD features, AQWidget *parent)
       AQPoint p = parent->size();
       p.x /= 2;
       p.y /= 2;
-      p.x -= size().x / 2;
-      p.y -= size().y / 2;
+      p.x -= preferredSize().x / 2;
+      p.y -= preferredSize().y / 2;
 
       setPos(parent->pos() + p);
    }
@@ -86,6 +108,13 @@ int AQMessageBox::exec()
 void AQMessageBox::accept()
 {
    m_return = 1;
+   hide();
+   m_visible = false;
+}
+
+void AQMessageBox::destroy()
+{
+   m_return = 2;
    hide();
    m_visible = false;
 }

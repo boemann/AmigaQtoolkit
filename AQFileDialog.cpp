@@ -1,4 +1,4 @@
-#include "AQFileDialog.h"
+ #include "AQFileDialog.h"
 
 #include <stdio.h>
 
@@ -120,8 +120,8 @@ AQFileDialog::AQFileDialog(UWORD features, AQWidget *parent)
       AQPoint p = parent->size();
       p.x /= 2;
       p.y /= 2;
-      p.x -= size().x / 2;
-      p.y -= size().y / 2;
+      p.x -= preferredSize().x / 2;
+      p.y -= preferredSize().y / 2;
 
       setPos(parent->pos() + p);
    }

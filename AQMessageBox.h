@@ -12,12 +12,13 @@ class AQMessageBox : public AQWidget
 {
 public:
    enum Buttons {
-      OkButton =0x0001
-    , SaveButton=0x0002
-    , CancelButton=0x0004
+      Ok =0x0001
+    , Save=0x0002
+    , DontSave=0x0002
+    , Cancel=0x0004
    };
 
-   AQMessageBox(UWORD buttons, AQWidget *parent = nullptr);
+   AQMessageBox(const AQString &title, const AQString &text, UWORD buttons, AQWidget *parent = nullptr);
    ~AQMessageBox();
 
    int exec();
@@ -29,6 +30,8 @@ protected:
    void closeEvent();
 
 private:
+   void destroy();
+
    int m_return;
    bool m_visible;
 };
