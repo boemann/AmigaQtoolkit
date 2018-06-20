@@ -34,7 +34,7 @@ void AQTabBar::addTab(const AQString &text)
    button->setText(text);
    button->setCheckable(true);
    button->setChecked(true);
-//   button->setShowSubButton();
+   button->setShowSubButton();
    Connect<AQTabBar>(button, "clicked", this, &AQTabBar::onTabClicked);
    Connect<AQTabBar>(button, "subClicked", this, &AQTabBar::onTabCloseClicked);
 

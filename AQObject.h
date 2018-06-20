@@ -10,7 +10,7 @@ class AQObject;
 class ConnectionBase
 {
 public:
-   ConnectionBase(const AQString &signalName);
+   ConnectionBase(const AQString &signalName, bool queue);
    void registerConnection(AQObject *sender, ConnectionBase *);
    void unregisterConnection(AQObject *sender, const ConnectionBase &);
 
@@ -20,14 +20,15 @@ public:
    virtual void invoke(bool arg) {}
    virtual void invoke(AQObject *arg) {}
    AQString m_signalName;
+   bool m_isQueued;
 };
 
 template <class Receiver>
 class Connect : public ConnectionBase
 {
 public:
-   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)())
-      : ConnectionBase(signalName)
+   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(), bool queue)
+      : ConnectionBase(signalName, queue)
       , m_receiver(r)
       , m_methodVoid(method)
       , m_methodBool(nullptr)
@@ -35,8 +36,8 @@ public:
       , m_methodObj(nullptr)
    {
    }
-   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(bool))
-      : ConnectionBase(signalName)
+   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(bool), bool queue)
+      : ConnectionBase(signalName, queue)
       , m_receiver(r)
       , m_methodVoid(nullptr)
       , m_methodBool(method)
@@ -44,8 +45,8 @@ public:
       , m_methodObj(nullptr)
    {
    }
-   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(int))
-      : ConnectionBase(signalName)
+   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(int), bool queue)
+      : ConnectionBase(signalName, queue)
       , m_receiver(r)
       , m_methodVoid(nullptr)
       , m_methodBool(nullptr)
@@ -53,8 +54,8 @@ public:
       , m_methodObj(nullptr)
    {
    }
-   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(AQObject *))
-      : ConnectionBase(signalName)
+   Connect(const AQString &signalName, Receiver *r, void (Receiver::*method)(AQObject *), bool queue)
+      : ConnectionBase(signalName, queue)
       , m_receiver(r)
       , m_methodVoid(nullptr)
       , m_methodBool(nullptr)
@@ -63,28 +64,28 @@ public:
    {
    }
 
-   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)())
-      : ConnectionBase(signalName)
+   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(), bool queue = false)
+      : ConnectionBase(signalName, queue)
    {
-      registerConnection(sender, new Connect(signalName, r, method));
+      registerConnection(sender, new Connect(signalName, r, method, queue));
    }
 
-   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(bool))
-      : ConnectionBase(signalName)
+   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(bool), bool queue = false)
+      : ConnectionBase(signalName, queue)
    {
-      registerConnection(sender, new Connect(signalName, r, method));
+      registerConnection(sender, new Connect(signalName, r, method, queue));
    }
 
-   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(int))
-      : ConnectionBase(signalName)
+   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(int), bool queue = false)
+      : ConnectionBase(signalName, queue)
    {
-      registerConnection(sender, new Connect(signalName, r, method));
+      registerConnection(sender, new Connect(signalName, r, method, queue));
    }
 
-   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(AQObject *))
-      : ConnectionBase(signalName)
+   Connect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(AQObject *), bool queue = false)
+      : ConnectionBase(signalName, queue)
    {
-      registerConnection(sender, new Connect(signalName, r, method));
+      registerConnection(sender, new Connect(signalName, r, method, queue));
    }
 
    void invoke(bool arg)
@@ -156,27 +157,27 @@ class Disconnect : public ConnectionBase
 {
 public:
    Disconnect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)())
-      : ConnectionBase(signalName)
+      : ConnectionBase(signalName, false)
    {
-      unregisterConnection(sender, Connect<Receiver>(signalName, r, method));
+      unregisterConnection(sender, Connect<Receiver>(signalName, r, method, false));
    }
 
    Disconnect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(bool))
-      : ConnectionBase(signalName)
+      : ConnectionBase(signalName, false)
    {
-      unregisterConnection(sender, Connect<Receiver>(signalName, r, method));
+      unregisterConnection(sender, Connect<Receiver>(signalName, r, method, false));
    }
 
    Disconnect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(int))
-      : ConnectionBase(signalName)
+      : ConnectionBase(signalName, false)
    {
-      unregisterConnection(sender, Connect<Receiver>(signalName, r, method));
+      unregisterConnection(sender, Connect<Receiver>(signalName, r, method, false));
    }
 
    Disconnect(AQObject *sender, const AQString &signalName, Receiver *r, void (Receiver::*method)(AQObject *))
-      : ConnectionBase(signalName)
+      : ConnectionBase(signalName, false)
    {
-      unregisterConnection(sender, Connect<Receiver>(signalName, r, method));
+      unregisterConnection(sender, Connect<Receiver>(signalName, r, method, false));
    }
 };
 

@@ -207,7 +207,7 @@ DevStudio::DevStudio()
    m_tabBar = new AQTabBar(central);
    centralL->addWidget(m_tabBar);
    Connect<DevStudio>(m_tabBar, "currentChanged", this, &DevStudio::onCurrentTabChanged);
-   Connect<DevStudio>(m_tabBar, "tabCloseClicked", this, &DevStudio::onTabCloseRequest);
+   Connect<DevStudio>(m_tabBar, "tabCloseClicked", this, &DevStudio::onTabCloseRequest, true);
 
    m_textEdit = new AQTextEdit(central);
    m_textEdit->setPreferredSize(AQPoint(640, 400));

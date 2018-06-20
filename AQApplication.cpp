@@ -63,8 +63,9 @@ AQRect AQRect::intersected(const AQRect &o) const
    return res;
 }
 
-ConnectionBase::ConnectionBase(const AQString &signalName)
+ConnectionBase::ConnectionBase(const AQString &signalName, bool queue)
    : m_signalName(signalName)
+   , m_isQueued(queue)
 {
 }
 
@@ -94,6 +95,9 @@ AQObject::~AQObject()
    // delete our own children in a safe way as the child destructor will manipulate our vector
    while (m_children.size())
       delete m_children.back();
+
+   for (int i = 0; i < m_connections.size(); ++i)
+      delete m_connections[i];
 }
 
 void AQObject::setParent(AQObject *p)
@@ -107,13 +111,39 @@ void AQObject::setParent(AQObject *p)
    m_parent = p;
 }
 
+struct QueuedInvocationMsg
+{
+   struct Message msg;
+   ConnectionBase *connection;
+   int arg;
+};
+
+static MsgPort *s_queuedInvocationPort = nullptr;
+
+void queueInvocation(ConnectionBase *c, int arg)
+{
+   if (!s_queuedInvocationPort)
+      return;
+
+   QueuedInvocationMsg *invocation = (QueuedInvocationMsg *)AllocMem(sizeof(struct QueuedInvocationMsg), MEMF_PUBLIC | MEMF_CLEAR);
+
+   invocation->msg.mn_Node.ln_Type = NT_MESSAGE; /* make up a message, */
+   invocation->msg.mn_Length = sizeof(struct QueuedInvocationMsg); 
+
+   invocation->connection = c;
+   invocation->arg = arg;
+   PutMsg(s_queuedInvocationPort, &invocation->msg);
+}
 
 void AQObject::emit(const AQString &signalName) {
    aqApp->latestSignalSender = this;
    for (int i= 0; i < m_connections.size(); ++i) {
       ConnectionBase *c = m_connections[i];
       if (c->m_signalName == signalName)
-         c->invoke();
+         if (c->m_isQueued)
+            queueInvocation(c, 0);
+         else
+            c->invoke();
    }
 }
 void AQObject::emit(const AQString &signalName, bool arg) {
@@ -121,7 +151,10 @@ void AQObject::emit(const AQString &signalName, bool arg) {
    for (int i= 0; i < m_connections.size(); ++i) {
       ConnectionBase *c = m_connections[i];
       if (c->m_signalName == signalName)
-         c->invoke(arg);
+         if (c->m_isQueued)
+            queueInvocation(c, arg);
+         else
+            c->invoke(arg);
    }
 }
 void AQObject::emit(const AQString &signalName, int arg) {
@@ -129,7 +162,10 @@ void AQObject::emit(const AQString &signalName, int arg) {
    for (int i= 0; i < m_connections.size(); ++i) {
       ConnectionBase *c = m_connections[i];
       if (c->m_signalName == signalName)
-         c->invoke(arg);
+         if (c->m_isQueued)
+            queueInvocation(c, arg);
+         else
+            c->invoke(arg);
    }
 }
 void AQObject::emit(const AQString &signalName, AQObject *arg) {
@@ -213,6 +249,8 @@ AQApplication::AQApplication()
    m_userPort = CreateMsgPort();
 
    m_asyncFilePort = CreateMsgPort();
+
+   s_queuedInvocationPort = CreateMsgPort();
 }
 
 void AQApplication::setFocus(AQWidget *w)
@@ -261,6 +299,7 @@ void AQApplication::processEvents(bool &stayAlive)
 {
    IntuiMessage *imsg;
    struct Message *asyncMsg;
+   struct QueuedInvocationMsg *invocation;
 
    ULONG sigFlag = (1L << m_userPort->mp_SigBit)
              | (1L << m_asyncFilePort->mp_SigBit);
@@ -344,6 +383,10 @@ void AQApplication::processEvents(bool &stayAlive)
          buf [rc] = 0;
          FreeDosObject (DOS_STDPKT, packet);
          emit("readFinished");
+      }
+      while (stayAlive && (!m_closing) && (invocation = (QueuedInvocationMsg *)GetMsg(s_queuedInvocationPort))) {
+         invocation->connection->invoke(invocation->arg);
+         FreeMem(invocation, sizeof(struct QueuedInvocationMsg));
       }
       
    }
@@ -449,6 +492,8 @@ AQApplication::~AQApplication()
 
    DeleteMsgPort(m_userPort);
    DeleteMsgPort(m_asyncFilePort);
+   DeleteMsgPort(s_queuedInvocationPort);
+   s_queuedInvocationPort = nullptr;
 
    if (IconBase) {
       CloseLibrary(IconBase);
