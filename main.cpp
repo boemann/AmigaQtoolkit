@@ -8,10 +8,12 @@ extern "C" void main(int argc, char **argv)
 {
    AQApplication app;
 
-   DevStudio devStudio;
-   devStudio.show();
+   DevStudio *devStudio = new DevStudio;
+   devStudio->show();
 
    app.exec();
+
+   delete devStudio;
 }
 
 
