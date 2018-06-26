@@ -13,6 +13,7 @@ class AQCommand;
 struct RastPort;
 class TextCommandBase;
 struct TextFont;
+class AQSyntaxHighlighter;
 
 class AQFormatRange
 {
@@ -144,6 +145,7 @@ public:
    friend class AQTextCursor;
    friend class DeleteCommand;
    friend class InsertCommand;
+   friend class AQTextSyntaxHighlighter;
 
 private:
    void restoreUndoneStateToCursors(TextCommandBase *cmd);
@@ -155,11 +157,13 @@ private:
 
    void pushData(int pos, int n, char *chars, bool createCommand = true);
    void deleteData(int pos, int n, bool createCommand = true);
-   void updateBlocks();
+   void updateBlocks(int start, int delta);
 
    void renderBlock(RastPort *rp, int x, int &yTop, int b);
 
    AQTextBlock m_blocks[5000];
+   AQSyntaxHighlighter *m_highlightRange[5000];
+
    unsigned long m_numBlocks;
 
    char *m_data;

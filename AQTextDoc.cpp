@@ -768,7 +768,10 @@ AQTextDoc::AQTextDoc(AQObject *parent)
    m_data[0] = 0;
    strcpy(m_data, "");
    m_size=strlen(m_data);
-   updateBlocks();
+   m_blocks[0].m_pos = 0;
+   m_blocks[1].m_pos = 1;
+   m_numBlocks = 1;
+//   updateBlocks(0, 0);
 }
 
 AQTextDoc::~AQTextDoc()
@@ -799,7 +802,7 @@ void AQTextDoc::loadFile(const AQString &fileName)
       m_data[m_size] = 0; // make sure we are null terminated
    }
    Close(file);
-   updateBlocks();
+   updateBlocks(0, m_size);
 
    emit("documentChanged", this);}
 
@@ -826,7 +829,7 @@ void AQTextDoc::setData(const AQString &text)
    if (m_size >= 0) {
       m_data[m_size] = 0; // make sure we are null terminated
    }
-   updateBlocks();
+   updateBlocks(0, m_size);
 
    emit("documentChanged", this);
 }
@@ -1014,7 +1017,7 @@ void AQTextDoc::pushData(int pos, int n, char *chars, bool createCommand)
    for (int i = 0; i < n; i++)
       m_data[pos + i] = chars[i];
 
-   updateBlocks();
+   updateBlocks(pos, n);
 
    if (cmd) {
       for (int i = 0; i < m_cursors.size(); ++i)
@@ -1037,7 +1040,7 @@ void AQTextDoc::deleteData(int pos, int n, bool createCommand)
    }
    m_size -= n;
 
-   updateBlocks();
+   updateBlocks(pos, -n);
 
    if (cmd) {
       for (int i = 0; i < m_cursors.size(); ++i)
@@ -1069,21 +1072,68 @@ void AQTextDoc::removeCursor(AQTextCursor *cursor)
    m_cursors.erase(std::remove(m_cursors.begin(), m_cursors.end(), cursor), m_cursors.end());
 }
 
-void AQTextDoc::updateBlocks()
-{
-   m_numBlocks = 0;
-   char *ptr = m_data;
-   do {
-      m_blocks[m_numBlocks++].m_pos = ptr - m_data;
+void AQTextDoc::updateBlocks(int pos, int delta)
+{  
+   // Find first block that is changed
+   int baseBlock = 0;
 
-      while (*ptr && *ptr != '\n')
-         ++ptr;
-      if (*ptr == '\n') {
-         ++ptr;
-         if (*ptr == 0)
-            m_blocks[m_numBlocks++].m_pos = ptr - m_data;
+   while (pos && m_blocks[baseBlock+1].m_pos <= pos) {
+      ++baseBlock;
+   }
+
+   // We assume that m_blocks[baseBlock] is correct;
+
+   //Now calculate delta blocks
+   int deltaBlocks = 0;
+   char *ptr = m_data + pos;
+   if (delta > 0) {
+      int remaining = delta;
+      do {
+         while (remaining && *ptr && *ptr != '\n') {
+            ++ptr;
+            --remaining;
+         }
+         if (remaining && *ptr == '\n') {
+            ++deltaBlocks;
+            ++ptr;
+            --remaining;
+         }
+      } while (remaining && *ptr);
+
+      // update all subsequent blocks (always needed)
+      int b = m_numBlocks;
+      while (b > baseBlock) {
+         m_blocks[b + deltaBlocks].m_pos = m_blocks[b].m_pos + delta;
+         --b;
       }
-   } while (*ptr);
-   m_blocks[m_numBlocks].m_pos = ptr - m_data + 1;
-   
+      
+      // Go through the added chars again to mark the new blocks
+      remaining = delta;
+      b = baseBlock;
+      ptr = m_data + pos;
+      do {
+         while (remaining && *ptr && *ptr != '\n') {
+            ++ptr;
+            --remaining;
+         }
+         if (remaining && *ptr == '\n') {
+            ++ptr;
+            --remaining;
+            ++b;
+            m_blocks[b].m_pos = ptr - m_data;
+         }
+      } while (remaining>0 && *ptr);
+      m_numBlocks += deltaBlocks;
+   } else {
+      while (m_blocks[baseBlock+deltaBlocks + 1].m_pos <= pos - delta)
+         deltaBlocks++;
+
+      // update all subsequent blocks (always needed)
+      m_numBlocks -= deltaBlocks;
+      int b = baseBlock + 1;
+      while (b <= m_numBlocks) {
+         m_blocks[b].m_pos = m_blocks[b + deltaBlocks].m_pos + delta;
+         ++b;
+      }
+   }
 }
