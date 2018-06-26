@@ -2,6 +2,8 @@
 
 #include <AQTextDoc.h>
 #include <AQCommand.h>
+#include <AQSyntaxHighlighter.h>
+
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -762,6 +764,7 @@ AQTextDoc::AQTextDoc(AQObject *parent)
    , m_size(0)
    , m_latestCommand(nullptr)
    , m_defaultFont(GfxBase->DefaultFont)
+   , m_highlighter(nullptr)
 {
    m_capacity = 1000;
    m_data = new char[m_capacity];
@@ -770,6 +773,8 @@ AQTextDoc::AQTextDoc(AQObject *parent)
    m_size=strlen(m_data);
    m_blocks[0].m_pos = 0;
    m_blocks[1].m_pos = 1;
+   m_highlightRanges[0] = nullptr;
+   m_highlightRanges[1] = nullptr;
    m_numBlocks = 1;
 //   updateBlocks(0, 0);
 }
@@ -1050,6 +1055,18 @@ void AQTextDoc::deleteData(int pos, int n, bool createCommand)
    }
 }
 
+void AQTextDoc::reHighlight(int b)
+{
+   if (b <= m_numBlocks)
+      delete m_highlightRanges[b];
+   m_highlightRanges[b] = nullptr;
+
+   if (m_highlighter) {
+      m_highlighter->setBlockNumber(b);
+      m_highlighter->highlightBlock(AQString(&m_data[m_blocks[b].m_pos], m_blocks[b+1].m_pos - m_blocks[b].m_pos));
+   }
+}
+
 void AQTextDoc::restoreUndoneStateToCursors(TextCommandBase *cmd)
 {
    for (int i = 0; i < m_cursors.size(); ++i)
@@ -1104,6 +1121,9 @@ void AQTextDoc::updateBlocks(int pos, int delta)
       int b = m_numBlocks;
       while (b > baseBlock) {
          m_blocks[b + deltaBlocks].m_pos = m_blocks[b].m_pos + delta;
+         if (deltaBlocks && b+deltaBlocks <= m_numBlocks)
+            delete m_highlightRanges[b + deltaBlocks];
+         m_highlightRanges[b + deltaBlocks] = m_highlightRanges[b];
          --b;
       }
       
@@ -1121,8 +1141,11 @@ void AQTextDoc::updateBlocks(int pos, int delta)
             --remaining;
             ++b;
             m_blocks[b].m_pos = ptr - m_data;
+
+            reHighlight(b-1);
          }
       } while (remaining>0 && *ptr);
+      reHighlight(b);
       m_numBlocks += deltaBlocks;
    } else {
       while (m_blocks[baseBlock+deltaBlocks + 1].m_pos <= pos - delta)
@@ -1133,7 +1156,11 @@ void AQTextDoc::updateBlocks(int pos, int delta)
       int b = baseBlock + 1;
       while (b <= m_numBlocks) {
          m_blocks[b].m_pos = m_blocks[b + deltaBlocks].m_pos + delta;
+         if (deltaBlocks)
+            delete m_highlightRanges[b];
+         m_highlightRanges[b] = m_highlightRanges[b+deltaBlocks];
          ++b;
       }
+      reHighlight(baseBlock);
    }
 }

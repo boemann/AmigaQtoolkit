@@ -31,6 +31,7 @@ SRCS = AQApplication.cpp \
        AQTextEdit.cpp \
        AQTextDoc.cpp \
        AQTextRender.cpp \
+       AQSyntaxHighlighter.cpp \
        AQLineEdit.cpp \
        DevStudio.cpp \
        Project.cpp \
@@ -62,6 +63,7 @@ HDRS = AQApplication.h \
        AQTabBar.h \
        AQTextEdit.h \
        AQTextDoc.h \
+       AQSyntaxHighlighter.h \
        AQLineEdit.h \
        AQStatusBar.h \
        DevStudio.h \

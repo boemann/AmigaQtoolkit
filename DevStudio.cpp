@@ -13,6 +13,7 @@
 #include <AQCommandStack.h>
 #include <AQTabBar.h>
 #include <AQClipboard.h>
+#include <AQSyntaxHighlighter.h>
 
 #include <proto/dos.h>
 
@@ -38,6 +39,7 @@ struct DocInfo
 DocInfo::DocInfo(DevStudio *studio, const AQString &path)
 {
    doc = new AQTextDoc(studio);
+new AQSyntaxHighlighter(doc);
    doc->loadFile(path);
    cursor = new AQTextCursor(*doc);
    m_findReplaceMode = 0; // intiallly no find replace widget

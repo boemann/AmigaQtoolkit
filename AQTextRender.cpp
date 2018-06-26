@@ -22,6 +22,11 @@ AQFormatRange::AQFormatRange(int fg, int bg, TextFont *font)
 {
 }
 
+AQFormatRange::~AQFormatRange()
+{
+   delete m_next;
+}
+
 void AQFormatRange::setStartEnd(int start, int end)
 {
    m_startInBlock = start;
@@ -136,7 +141,11 @@ void AQTextDoc::renderBlock(RastPort *rp, int x, int &yTop, int b)
    AQFormatRange rng(1, -2, m_defaultFont);
    rng.setStartEnd(0, len);
    AQFormatRange *r = &rng;
-
+   AQFormatRange *highlightRng = m_highlightRanges[b];
+   while (highlightRng) {
+      rng.modifyWith(highlightRng);
+      highlightRng = highlightRng->next();
+   }
    for (int i = m_cursors.size() -1; i >= 0; --i) {
       AQTextCursor *cursor = m_cursors[i];
 

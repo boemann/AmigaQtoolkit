@@ -19,6 +19,7 @@ class AQFormatRange
 {
 public:
    AQFormatRange(int fg, int bg, TextFont *font);
+   virtual ~AQFormatRange();
 
    void setStartEnd(int start, int end);
    void render(RastPort *rp, char *data);
@@ -145,9 +146,10 @@ public:
    friend class AQTextCursor;
    friend class DeleteCommand;
    friend class InsertCommand;
-   friend class AQTextSyntaxHighlighter;
+   friend class AQSyntaxHighlighter;
 
 private:
+   void reHighlight(int block);
    void restoreUndoneStateToCursors(TextCommandBase *cmd);
    void restoreDoneStateToCursors(TextCommandBase *cmd);
    void addCursor(AQTextCursor *cursor);
@@ -162,7 +164,7 @@ private:
    void renderBlock(RastPort *rp, int x, int &yTop, int b);
 
    AQTextBlock m_blocks[5000];
-   AQSyntaxHighlighter *m_highlightRange[5000];
+   AQFormatRange *m_highlightRanges[5000];
 
    unsigned long m_numBlocks;
 
@@ -173,6 +175,7 @@ private:
    int m_charWidth;
    AQCommand *m_latestCommand;
    TextFont *m_defaultFont;
+   AQSyntaxHighlighter *m_highlighter;
 };
 
 #endif
