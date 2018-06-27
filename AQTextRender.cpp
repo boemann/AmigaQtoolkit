@@ -72,6 +72,13 @@ void AQFormatRange::modifyWith(AQFormatRange *other)
    }
    if (m_next)
       m_next->modifyWith(other);
+   else if (other->m_endInBlock > m_endInBlock){
+      AQFormatRange *rng = new AQFormatRange(other->m_fgColor
+, other->m_bgColor, other->m_font);
+      rng->m_startInBlock = aqMax(other->m_startInBlock, m_endInBlock);
+      rng->m_endInBlock = other->m_endInBlock;
+      m_next = rng;
+   }
 }
 
 void AQFormatRange::render(RastPort *rp, char *data)

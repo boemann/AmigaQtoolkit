@@ -8,6 +8,7 @@
 #include <AQString.h>
 
 class AQTextDoc;
+class CharState;
 
 class AQSyntaxHighlighter
 {
@@ -20,10 +21,15 @@ protected:
    virtual void highlightBlock(const AQString &text);
    void setFormat(int start, int count, int color);
 
+   void addKeyWord(char *keyword, int color, int appendNonWord = false);
+
+
 private:
    void setBlockNumber(int blockNumber);
    int m_blockNumber;
    AQTextDoc *m_doc;
+   CharState *m_defaultState;
+   CharState *m_nonWordState;
 };
 
 

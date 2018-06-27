@@ -1121,11 +1121,12 @@ void AQTextDoc::updateBlocks(int pos, int delta)
       int b = m_numBlocks;
       while (b > baseBlock) {
          m_blocks[b + deltaBlocks].m_pos = m_blocks[b].m_pos + delta;
-         if (deltaBlocks && b+deltaBlocks <= m_numBlocks)
-            delete m_highlightRanges[b + deltaBlocks];
          m_highlightRanges[b + deltaBlocks] = m_highlightRanges[b];
          --b;
       }
+
+      while(b < baseBlock + deltaBlocks) // deref the ones we moved
+         m_highlightRanges[++b] = nullptr;
       
       // Go through the added chars again to mark the new blocks
       remaining = delta;
@@ -1156,7 +1157,7 @@ void AQTextDoc::updateBlocks(int pos, int delta)
       int b = baseBlock + 1;
       while (b <= m_numBlocks) {
          m_blocks[b].m_pos = m_blocks[b + deltaBlocks].m_pos + delta;
-         if (deltaBlocks)
+         if (deltaBlocks && b < baseBlock + deltaBlocks)
             delete m_highlightRanges[b];
          m_highlightRanges[b] = m_highlightRanges[b+deltaBlocks];
          ++b;
